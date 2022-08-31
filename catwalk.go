@@ -141,17 +141,47 @@ func (d *driver) trace(traceEnabled bool, format string, args ...interface{}) {
 
 func (d *driver) processTeaCmds(trace bool) {
 	// TODO(knz): handle timeouts.
-	for _, cmd := range d.cmds {
+	var inputs []tea.Cmd
+	for {
+		if len(d.cmds) >= 0 {
+			inputs = append(make([]tea.Cmd, 0, len(d.cmds)+len(inputs)), inputs...)
+			inputs = append(inputs, d.cmds...)
+			d.cmds = nil
+		}
+		if len(inputs) == 0 {
+			break
+		}
+		cmd := inputs[0]
+		inputs = inputs[1:]
 		msg := cmd()
-		d.trace(trace, "expanded cmd: %T", msg)
+
+		rmsg := reflect.ValueOf(msg)
+		if rmsg.CanConvert(cmdsType) {
+			rcmds := rmsg.Convert(cmdsType)
+			cmds := rcmds.Interface().([]tea.Cmd)
+			d.trace(trace, "expanded %d commands", len(cmds))
+			d.addCmds(cmds...)
+			continue
+		}
+
+		d.trace(trace, "translated cmd: %T", msg)
 		d.addMsg(msg)
 	}
-	d.cmds = d.cmds[:0]
 }
 
-var cmdsType = reflect.TypeOf([]tea.Cmd{})
-var printType = reflect.TypeOf(tea.Println("hello")())
-var quitType = reflect.TypeOf(tea.Quit())
+var (
+	cmdsType       = reflect.TypeOf([]tea.Cmd{})
+	printType      = reflect.TypeOf(tea.Println("hello")())
+	quitType       = reflect.TypeOf(tea.Quit())
+	execType       = reflect.TypeOf(tea.ExecProcess(nil, nil)())
+	hideCursorType = reflect.TypeOf(tea.HideCursor())
+	enterAltType   = reflect.TypeOf(tea.EnterAltScreen())
+	exitAltType    = reflect.TypeOf(tea.ExitAltScreen())
+	mouseCellType  = reflect.TypeOf(tea.EnableMouseCellMotion())
+	mouseAllType   = reflect.TypeOf(tea.EnableMouseAllMotion())
+	mouseDisType   = reflect.TypeOf(tea.DisableMouse())
+	szType         = reflect.TypeOf(tea.WindowSizeMsg{})
+)
 
 func (d *driver) processTeaMsgs(trace bool) {
 	for _, msg := range d.msgs {
@@ -168,8 +198,24 @@ func (d *driver) processTeaMsgs(trace bool) {
 		switch rmsg.Type() {
 		case printType:
 			fmt.Fprintf(&d.result, "TEA PRINT: %v\n", msg)
+		case szType:
+			fmt.Fprintf(&d.result, "TEA WINDOW SIZE: %v\n", msg)
 		case quitType:
 			fmt.Fprintf(&d.result, "TEA QUIT\n")
+		case execType:
+			fmt.Fprintf(&d.result, "TEA EXEC\n")
+		case hideCursorType:
+			fmt.Fprintf(&d.result, "TEA HIDE CURSOR\n")
+		case enterAltType:
+			fmt.Fprintf(&d.result, "TEA ENTER ALT\n")
+		case exitAltType:
+			fmt.Fprintf(&d.result, "TEA EXIT ALT\n")
+		case mouseCellType:
+			fmt.Fprintf(&d.result, "TEA ENABLE MOUSE CELL MOTION\n")
+		case mouseAllType:
+			fmt.Fprintf(&d.result, "TEA ENABLE MOUSE MOTION ALL\n")
+		case mouseDisType:
+			fmt.Fprintf(&d.result, "TEA DISABLE MOUSE\n")
 		default:
 			newM, newCmd := d.m.Update(msg)
 			d.m = newM
