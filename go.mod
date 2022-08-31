@@ -1,4 +1,4 @@
-module catwalk
+module github.com/knz/catwalk
 
 go 1.17
 

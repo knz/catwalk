@@ -14,6 +14,14 @@ type Model struct {
 
 var _ tea.Model = (*Model)(nil)
 
+// New initializes a new model.
+func New(width, height int) Model {
+	return Model{
+		Model: viewport.New(width, height),
+	}
+	return m
+}
+
 const loremIpsum = `
 lorem ipsum dolor sit amet, consectetur adipiscing
 elit, sed do eiusmod tempor incididunt ut labore et dolore magna
