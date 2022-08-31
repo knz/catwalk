@@ -3,6 +3,7 @@ package catwalk
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -69,8 +70,13 @@ func RunModel(t *testing.T, path string, m tea.Model, opts ...Option) {
 type driver struct {
 	m tea.Model
 
+	result bytes.Buffer
+
 	// Queued commands left for processing.
 	cmds []tea.Cmd
+
+	// Queued messages left for processing.
+	msgs []tea.Msg
 
 	// Test model updater (optional).
 	upd ModelUpdater
@@ -127,15 +133,66 @@ func NewDriver(m tea.Model, opts ...Option) Driver {
 	return d
 }
 
-func (d *driver) processTeaCmds(trace bool) {
-	// TODO
+func (d *driver) trace(traceEnabled bool, format string, args ...interface{}) {
+	if traceEnabled {
+		fmt.Fprintf(&d.result, "-- trace: "+format+"\n", args...)
+	}
 }
 
-func (d *driver) addCmd(cmd tea.Cmd) {
-	if cmd == nil {
+func (d *driver) processTeaCmds(trace bool) {
+	// TODO(knz): handle timeouts.
+	for _, cmd := range d.cmds {
+		msg := cmd()
+		d.trace(trace, "expanded cmd: %T", msg)
+		d.addMsg(msg)
+	}
+	d.cmds = d.cmds[:0]
+}
+
+var cmdsType = reflect.TypeOf([]tea.Cmd{})
+var printType = reflect.TypeOf(tea.Println("hello")())
+var quitType = reflect.TypeOf(tea.Quit())
+
+func (d *driver) processTeaMsgs(trace bool) {
+	for _, msg := range d.msgs {
+		rmsg := reflect.ValueOf(msg)
+		if rmsg.CanConvert(cmdsType) {
+			rcmds := rmsg.Convert(cmdsType)
+			cmds := rcmds.Interface().([]tea.Cmd)
+			d.addCmds(cmds...)
+			continue
+		}
+
+		d.trace(trace, "msg %T %v", msg, msg)
+
+		switch rmsg.Type() {
+		case printType:
+			fmt.Fprintf(&d.result, "TEA PRINT: %v\n", msg)
+		case quitType:
+			fmt.Fprintf(&d.result, "TEA QUIT\n")
+		default:
+			newM, newCmd := d.m.Update(msg)
+			d.m = newM
+			d.addCmds(newCmd)
+		}
+	}
+	d.msgs = d.msgs[:0]
+}
+
+func (d *driver) addCmds(cmds ...tea.Cmd) {
+	for _, cmd := range cmds {
+		if cmd == nil {
+			continue
+		}
+		d.cmds = append(d.cmds, cmd)
+	}
+}
+
+func (d *driver) addMsg(msg tea.Msg) {
+	if msg == nil {
 		return
 	}
-	d.cmds = append(d.cmds, cmd)
+	d.msgs = append(d.msgs, msg)
 }
 
 func (d *driver) Close(t TB) {}
@@ -146,6 +203,8 @@ func (d *driver) RunOneTest(t TB, td *datadriven.TestData) string {
 
 	switch td.Cmd {
 	case "run":
+		d.result.Reset()
+
 		// Observations: check if there's an observe=() key
 		// on the first test input line. If not, just observe the view.
 		var observe []string
@@ -161,22 +220,19 @@ func (d *driver) RunOneTest(t TB, td *datadriven.TestData) string {
 			observe = []string{"view"}
 		}
 
-		var result bytes.Buffer
 		traceEnabled := td.HasArg("trace")
 		trace := func(format string, args ...interface{}) {
-			if traceEnabled {
-				fmt.Fprintf(&result, "-- trace: "+format+"\n", args...)
-			}
+			d.trace(traceEnabled, format, args...)
 		}
 
 		doObserve := func() {
 			for _, obs := range observe {
 				o := d.Observe(t, obs)
-				result.WriteString(o)
+				d.result.WriteString(o)
 				// Terminate items with a newline if there's none yet.
-				if result.Len() > 0 {
-					if result.Bytes()[result.Len()-1] != '\n' {
-						result.WriteByte('\n')
+				if d.result.Len() > 0 {
+					if d.result.Bytes()[d.result.Len()-1] != '\n' {
+						d.result.WriteByte('\n')
 					}
 				}
 			}
@@ -186,20 +242,16 @@ func (d *driver) RunOneTest(t TB, td *datadriven.TestData) string {
 		if !d.startDone {
 			if !d.disableAutoInit {
 				trace("calling Init")
-				d.addCmd(d.m.Init())
+				d.addCmds(d.m.Init())
+				d.processTeaCmds(traceEnabled)
 			}
+
 			if d.autoSize {
 				msg := tea.WindowSizeMsg{Width: d.width, Height: d.height}
-				trace("calling Update with initial %#v", msg)
-				m, newCmd := d.m.Update(msg)
-				d.m = m
-				d.addCmd(newCmd)
+				d.addMsg(msg)
 			}
 			d.startDone = true
 		}
-
-		// Process queued commands, if any.
-		d.processTeaCmds(traceEnabled)
 
 		// Process the commands in the test's input.
 		testInputCommands := strings.Split(td.Input, "\n")
@@ -213,22 +265,36 @@ func (d *driver) RunOneTest(t TB, td *datadriven.TestData) string {
 
 			trace("before %q", testInputCmd)
 
-			// If the previou testInputCmd produced
-			// some tea.Cmd, process them now.
-			d.processTeaCmds(traceEnabled)
+			// If the previous testInputCmd produced
+			// some tea.Cmds, process them now.
+			d.processTeaMsgs(traceEnabled)
 
 			// Apply the new testInputCmd.
 			args := strings.Split(testInputCmd, " ")
 			testInputCmd = args[0]
 			args = args[1:]
 			cmd := d.ApplyTextCommand(t, testInputCmd, args...)
-			d.addCmd(cmd)
+			d.addCmds(cmd)
+			d.processTeaCmds(traceEnabled)
+
+			if traceEnabled {
+				trace("after %q", testInputCmd)
+				doObserve()
+			}
 		}
 
-		// Final observation.
+		if traceEnabled {
+			trace("before finish")
+			doObserve()
+		}
+		// Last round of command execution.
+		d.processTeaMsgs(traceEnabled)
+		d.processTeaCmds(traceEnabled)
+		d.processTeaMsgs(traceEnabled)
+
 		trace("at end")
 		doObserve()
-		return result.String()
+		return d.result.String()
 
 	default:
 		t.Fatalf("%s: unrecognized test directive: %s", td.Pos, td.Cmd)
@@ -241,11 +307,15 @@ func (d *driver) Observe(t TB, what string) string {
 	var buf strings.Builder
 	fmt.Fprintf(&buf, "-- %s:\n", what)
 	switch what {
+	case "msgs":
+		fmt.Fprintf(&buf, "msg queue sz: %d\n", len(d.msgs))
+		for i, msg := range d.msgs {
+			t := reflect.TypeOf(msg)
+			fmt.Fprintf(&buf, "%d:%s: %v\n", i, t, msg)
+		}
+
 	case "cmds":
 		fmt.Fprintf(&buf, "command queue sz: %d\n", len(d.cmds))
-		for i, cmd := range d.cmds {
-			fmt.Fprintf(&buf, "%d:%T: %v\n", i, cmd, cmd)
-		}
 
 	case "view":
 		o := d.m.View()
@@ -296,9 +366,7 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 		w := d.getInt(t, args[0])
 		h := d.getInt(t, args[1])
 		msg := tea.WindowSizeMsg{Width: w, Height: h}
-		newModel, cmd := d.m.Update(msg)
-		d.m = newModel
-		return cmd
+		d.addMsg(msg)
 
 	case "key":
 		d.assertArgc(t, args, 1)
@@ -307,9 +375,7 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 			t.Fatalf("%s: unknown key: %s", d.pos, args[0])
 		}
 		msg := tea.KeyMsg(k)
-		newModel, cmd := d.m.Update(msg)
-		d.m = newModel
-		return cmd
+		d.addMsg(msg)
 
 	case "type":
 		var buf strings.Builder
@@ -319,23 +385,14 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 			}
 			buf.WriteString(arg)
 		}
-		messages := make([]tea.Msg, 0, buf.Len())
 		for _, r := range buf.String() {
-			messages = append(messages, tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune{r}}))
+			d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune{r}}))
 		}
-		var cmd tea.Cmd
-		for _, msg := range messages {
-			newModel, newCmd := d.m.Update(msg)
-			d.m = newModel
-			cmd = tea.Batch(cmd, newCmd)
-		}
-		return cmd
 
 	default:
 		if d.upd != nil {
 			t.Logf("%s: applying command %q via model updater", d.pos, cmd)
 			newModel, cmd := d.upd.TestUpdate(t, d.m, cmd, args...)
-			// FIXME: use cmd
 			d.m = newModel
 			return cmd
 		} else {
@@ -343,7 +400,7 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 		}
 	}
 
-	return nil // unreachable
+	return nil
 }
 
 var allKeys = func() map[string]tea.Key {

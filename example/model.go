@@ -3,6 +3,7 @@ package example
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -42,7 +43,13 @@ func (m *Model) Init() tea.Cmd {
 	return cmd
 }
 
+var quitBinding = key.NewBinding(key.WithKeys("q"))
+
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if kmsg, ok := msg.(tea.KeyMsg); ok && key.Matches(kmsg, quitBinding) {
+		return m, tea.Quit
+	}
+
 	newView, cmd := m.Model.Update(msg)
 	m.Model = newView
 	return m, cmd

@@ -2,36 +2,42 @@ run
 ----
 -- view:
 lorem ipsum dolor sit amet, consectetur ␤
-adipiscing                              ␤
-elit, sed do eiusmod tempor incididunt  ␤
-ut labore et dolore magna               🛇
+elit, sed do eiusmod tempor incididunt u␤
+aliqua. Ut enim ad minim veniam, quis no🛇
 
 # One line down
 run
 type j
 ----
 -- view:
-elit, sed do eiusmod tempor incididunt  ␤
-ut labore et dolore magna               ␤
-aliqua. Ut enim ad minim veniam, quis   ␤
-nostrud exercitation ullamco            🛇
+elit, sed do eiusmod tempor incididunt u␤
+aliqua. Ut enim ad minim veniam, quis no␤
+laboris nisi ut aliquip ex ea commodo co🛇
 
 # Two lines down
 run
 type jj
 ----
 -- view:
-laboris nisi ut aliquip ex ea commodo   ␤
-consequat. Duis aute irure dolor        ␤
+laboris nisi ut aliquip ex ea commodo co␤
 in reprehenderit in voluptate velit esse␤
-cillum dolore eu fugiat nulla           🛇
+pariatur. Excepteur sint occaecat cupida🛇
 
 # One line up
 run
 key up
 ----
 -- view:
-aliqua. Ut enim ad minim veniam, quis   ␤
-nostrud exercitation ullamco            ␤
-laboris nisi ut aliquip ex ea commodo   ␤
-consequat. Duis aute irure dolor        🛇
+aliqua. Ut enim ad minim veniam, quis no␤
+laboris nisi ut aliquip ex ea commodo co␤
+in reprehenderit in voluptate velit esse🛇
+
+# Check the exit key works.
+run
+type q
+----
+TEA QUIT
+-- view:
+aliqua. Ut enim ad minim veniam, quis no␤
+laboris nisi ut aliquip ex ea commodo co␤
+in reprehenderit in voluptate velit esse🛇
