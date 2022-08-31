@@ -300,6 +300,17 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 		d.m = newModel
 		return cmd
 
+	case "key":
+		d.assertArgc(t, args, 1)
+		k, ok := allKeys[args[0]]
+		if !ok {
+			t.Fatalf("%s: unknown key: %s", d.pos, args[0])
+		}
+		msg := tea.KeyMsg(k)
+		newModel, cmd := d.m.Update(msg)
+		d.m = newModel
+		return cmd
+
 	case "type":
 		var buf strings.Builder
 		for i, arg := range args {
@@ -334,3 +345,30 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 
 	return nil // unreachable
 }
+
+var allKeys = func() map[string]tea.Key {
+	result := make(map[string]tea.Key)
+	for i := 0; ; i++ {
+		k := tea.Key{Type: tea.KeyType(i)}
+		keyName := k.String()
+		fmt.Println("found key:", keyName)
+		if keyName == "" {
+			break
+		}
+		result[keyName] = k
+		k.Alt = true
+		result[k.String()] = k
+	}
+	for i := -2; ; i-- {
+		k := tea.Key{Type: tea.KeyType(i)}
+		keyName := k.String()
+		fmt.Println("found key:", keyName)
+		if keyName == "" {
+			break
+		}
+		result[keyName] = k
+		k.Alt = true
+		result[k.String()] = k
+	}
+	return result
+}()
