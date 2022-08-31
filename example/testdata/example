@@ -1,36 +1,36 @@
 run
 ----
 -- view:
-lorem ipsum dolor sit amet, consectetur ␤
-elit, sed do eiusmod tempor incididunt u␤
-aliqua. Ut enim ad minim veniam, quis no🛇
+[31mlorem ipsum dolor sit amet, consectetur [0m␤
+[31melit, sed do eiusmod tempor incididunt u[0m␤
+[31maliqua. Ut enim ad minim veniam, quis no[0m🛇
 
 # One line down
 run
 type j
 ----
 -- view:
-elit, sed do eiusmod tempor incididunt u␤
-aliqua. Ut enim ad minim veniam, quis no␤
-laboris nisi ut aliquip ex ea commodo co🛇
+[31melit, sed do eiusmod tempor incididunt u[0m␤
+[31maliqua. Ut enim ad minim veniam, quis no[0m␤
+[31mlaboris nisi ut aliquip ex ea commodo co[0m🛇
 
 # Two lines down
 run
 type jj
 ----
 -- view:
-laboris nisi ut aliquip ex ea commodo co␤
-in reprehenderit in voluptate velit esse␤
-pariatur. Excepteur sint occaecat cupida🛇
+[31mlaboris nisi ut aliquip ex ea commodo co[0m␤
+[31min reprehenderit in voluptate velit esse[0m␤
+[31mpariatur. Excepteur sint occaecat cupida[0m🛇
 
 # One line up
 run
 key up
 ----
 -- view:
-aliqua. Ut enim ad minim veniam, quis no␤
-laboris nisi ut aliquip ex ea commodo co␤
-in reprehenderit in voluptate velit esse🛇
+[31maliqua. Ut enim ad minim veniam, quis no[0m␤
+[31mlaboris nisi ut aliquip ex ea commodo co[0m␤
+[31min reprehenderit in voluptate velit esse[0m🛇
 
 # Check the exit key works.
 run
@@ -38,6 +38,6 @@ type q
 ----
 TEA QUIT
 -- view:
-aliqua. Ut enim ad minim veniam, quis no␤
-laboris nisi ut aliquip ex ea commodo co␤
-in reprehenderit in voluptate velit esse🛇
+[31maliqua. Ut enim ad minim veniam, quis no[0m␤
+[31mlaboris nisi ut aliquip ex ea commodo co[0m␤
+[31min reprehenderit in voluptate velit esse[0m🛇
