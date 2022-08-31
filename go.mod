@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/charmbracelet/bubbletea v0.22.1
 	github.com/cockroachdb/datadriven v1.0.1
+	github.com/kr/pretty v0.3.0
 )
 
 require (
@@ -14,7 +15,6 @@ require (
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/getsentry/sentry-go v0.12.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
