@@ -17,8 +17,8 @@ import (
 // a tea.Model in RunModel() which can apply state
 // change commands as input to a test.
 type ModelUpdater interface {
-	// TestUpdate is called for every unknown directive
-	// in the input.
+	// TestUpdate is called for every unknown command
+	// under "run" directives in the input file.
 	TestUpdate(t TB, m tea.Model, cmd string, args ...string) (tea.Model, tea.Cmd)
 }
 
