@@ -9,11 +9,11 @@ import (
 
 func TestModel(t *testing.T) {
 	// Initialize the model to test.
-	m := New(40, 10)
+	m := New(40, 2)
 
 	// Use catwalk and datadriven to run all the tests in directory
 	// "testdata".
 	datadriven.Walk(t, "testdata", func(t *testing.T, path string) {
-		catwalk.RunModel(t, path, &m, nil)
+		catwalk.RunModel(t, path, &m)
 	})
 }

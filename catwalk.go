@@ -2,6 +2,7 @@ package catwalk
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -20,25 +21,69 @@ type ModelUpdater interface {
 	TestUpdate(t TB, m tea.Model, cmd string, args ...string) (tea.Model, tea.Cmd)
 }
 
+// Option is the type of an option which can be specified
+// with RunModel or NewDriver.
+type Option func(*driver)
+
+// WithUpdater adds the specified model updater to the test.
+func WithUpdater(upd ModelUpdater) Option {
+	return func(d *driver) {
+		d.upd = upd
+	}
+}
+
+// WithAutoInitDisabled tells the test to not automatically
+// initialize the model (via the Init method) upon first use.
+func WithAutoInitDisabled() Option {
+	return func(d *driver) {
+		d.disableAutoInit = true
+	}
+}
+
+// WithWindowSize tells the test driver to issue a tea.WindowSizeMsg
+// as the first event after initialization.
+func WithWindowSize(width, height int) Option {
+	return func(d *driver) {
+		d.autoSize = true
+		d.width = width
+		d.height = height
+	}
+}
+
 // RunModel runs the tests contained in the file pointed to by 'path'
-// on the model m.
+// on the model m, using a fresh driver initialize via NewDriver and
+// the specified options.
+//
 // To apply RunModel on all the test files in a directory,
 // use datadriven.Walk.
-func RunModel(t *testing.T, path string, m tea.Model, upd ModelUpdater) {
-	driver := NewDriver(m, upd)
-	defer driver.Close(t)
+func RunModel(t *testing.T, path string, m tea.Model, opts ...Option) {
+	d := NewDriver(m, opts...)
+	defer d.Close(t)
 
-	driver.Start(t)
-
-	datadriven.RunTest(t, path, func(t *testing.T, d *datadriven.TestData) string {
-		return driver.RunOneTest(t, d)
+	datadriven.RunTest(t, path, func(t *testing.T, td *datadriven.TestData) string {
+		return d.RunOneTest(t, td)
 	})
 }
 
 // driver represents the test driver.
 type driver struct {
-	m   tea.Model
+	m tea.Model
+
+	// Queued commands left for processing.
+	cmds []tea.Cmd
+
+	// Test model updater (optional).
 	upd ModelUpdater
+
+	startDone bool
+
+	// Don't call m.Init() on start.
+	disableAutoInit bool
+
+	// Send a WindowSizeMsg on start.
+	autoSize bool
+	width    int
+	height   int
 
 	// pos is the position in the input data file.
 	// Used to produce error messages etc.
@@ -54,12 +99,11 @@ type TB interface {
 
 // Driver is the externally-visible interface for a test driver.
 type Driver interface {
-	// Start initializes the model and prepares it for testing.
-	Start(t TB)
 	// Close stops the model at the end.
 	Close(t TB)
 	// ApplyTextCommand applies the given textual command to the model.
-	ApplyTextCommand(t TB, cmd string, args ...string)
+	// It may return an extra tea.Cmd to process by the test.
+	ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd
 	// Observe observes the given component of the model.
 	// Supported values:
 	// - view: call View()
@@ -71,13 +115,27 @@ type Driver interface {
 }
 
 // NewDriver creates a test driver for the given model.
-func NewDriver(m tea.Model, upd ModelUpdater) Driver {
-	return &driver{m: m, upd: upd}
+func NewDriver(m tea.Model, opts ...Option) Driver {
+	d := &driver{
+		m: m,
+	}
+
+	for _, opt := range opts {
+		opt(d)
+	}
+
+	return d
 }
 
-func (d *driver) Start(t TB) {
-	// FIXME: use cmd
-	_ = d.m.Init()
+func (d *driver) processTeaCmds(trace bool) {
+	// TODO
+}
+
+func (d *driver) addCmd(cmd tea.Cmd) {
+	if cmd == nil {
+		return
+	}
+	d.cmds = append(d.cmds, cmd)
 }
 
 func (d *driver) Close(t TB) {}
@@ -103,46 +161,101 @@ func (d *driver) RunOneTest(t TB, td *datadriven.TestData) string {
 			observe = []string{"view"}
 		}
 
-		// Process the commands in the input.
-		commands := strings.Split(td.Input, "\n")
-		for _, command := range commands {
-			command = strings.TrimSpace(command)
-			if command == "" || strings.HasPrefix(command, "#") {
+		var result bytes.Buffer
+		traceEnabled := td.HasArg("trace")
+		trace := func(format string, args ...interface{}) {
+			if traceEnabled {
+				fmt.Fprintf(&result, "-- trace: "+format+"\n", args...)
+			}
+		}
+
+		doObserve := func() {
+			for _, obs := range observe {
+				o := d.Observe(t, obs)
+				result.WriteString(o)
+				// Terminate items with a newline if there's none yet.
+				if result.Len() > 0 {
+					if result.Bytes()[result.Len()-1] != '\n' {
+						result.WriteByte('\n')
+					}
+				}
+			}
+		}
+
+		// Process the initialization, if not done yet.
+		if !d.startDone {
+			if !d.disableAutoInit {
+				trace("calling Init")
+				d.addCmd(d.m.Init())
+			}
+			if d.autoSize {
+				msg := tea.WindowSizeMsg{Width: d.width, Height: d.height}
+				trace("calling Update with initial %#v", msg)
+				m, newCmd := d.m.Update(msg)
+				d.m = m
+				d.addCmd(newCmd)
+			}
+			d.startDone = true
+		}
+
+		// Process queued commands, if any.
+		d.processTeaCmds(traceEnabled)
+
+		// Process the commands in the test's input.
+		testInputCommands := strings.Split(td.Input, "\n")
+
+		for _, testInputCmd := range testInputCommands {
+			testInputCmd = strings.TrimSpace(testInputCmd)
+			if testInputCmd == "" || strings.HasPrefix(testInputCmd, "#") {
 				// Comment or emptyline.
 				continue
 			}
-			args := strings.Split(command, " ")
-			command = args[0]
+
+			trace("before %q", testInputCmd)
+
+			// If the previou testInputCmd produced
+			// some tea.Cmd, process them now.
+			d.processTeaCmds(traceEnabled)
+
+			// Apply the new testInputCmd.
+			args := strings.Split(testInputCmd, " ")
+			testInputCmd = args[0]
 			args = args[1:]
-			d.ApplyTextCommand(t, command, args...)
+			cmd := d.ApplyTextCommand(t, testInputCmd, args...)
+			d.addCmd(cmd)
 		}
 
-		// Construct the expected result.
-		var result bytes.Buffer
-		for _, obs := range observe {
-			o := d.Observe(t, obs)
-			// Make newlines visible.
-			o = strings.ReplaceAll(o, "\n", "␤\n")
-			// Add a newline if there was none at the end.
-			if len(o) == 0 || o[len(o)-1] != '\n' {
-				o += "🛇\n"
-			}
-
-			result.WriteString(o)
-		}
+		// Final observation.
+		trace("at end")
+		doObserve()
 		return result.String()
 
 	default:
-		t.Fatalf("%s: unrecognized command: %s", td.Pos, td.Cmd)
+		t.Fatalf("%s: unrecognized test directive: %s", td.Pos, td.Cmd)
 	}
 
 	return "unreachable"
 }
 
 func (d *driver) Observe(t TB, what string) string {
+	var buf strings.Builder
+	fmt.Fprintf(&buf, "-- %s:\n", what)
 	switch what {
+	case "cmds":
+		fmt.Fprintf(&buf, "command queue sz: %d\n", len(d.cmds))
+		for i, cmd := range d.cmds {
+			fmt.Fprintf(&buf, "%d:%T: %v\n", i, cmd, cmd)
+		}
+
 	case "view":
-		return d.m.View()
+		o := d.m.View()
+		// Make newlines visible.
+		o = strings.ReplaceAll(o, "\n", "␤\n")
+		// Add a "no newline at end" marker if there was no newline at the end.
+		if len(o) == 0 || o[len(o)-1] != '\n' {
+			o += "🛇"
+		}
+		buf.WriteString(o)
 
 	case "debug":
 		type dbg interface{ Debug() string }
@@ -150,16 +263,16 @@ func (d *driver) Observe(t TB, what string) string {
 		if !ok {
 			t.Fatalf("%s: model does not support a Debug() string method")
 		}
-		return md.Debug()
+		buf.WriteString(md.Debug())
 
 	case "gostruct":
-		return pretty.Sprint(d.m)
+		buf.WriteString(pretty.Sprint(&buf, d.m))
 
 	default:
 		t.Fatalf("%s: unsupported observation: %q", what)
 	}
 
-	return "unreachable"
+	return buf.String()
 }
 
 func (d *driver) assertArgc(t TB, args []string, expected int) {
@@ -176,7 +289,7 @@ func (d *driver) getInt(t TB, v string) int {
 	return i
 }
 
-func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) {
+func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 	switch cmd {
 	case "resize":
 		d.assertArgc(t, args, 2)
@@ -184,9 +297,8 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) {
 		h := d.getInt(t, args[1])
 		msg := tea.WindowSizeMsg{Width: w, Height: h}
 		newModel, cmd := d.m.Update(msg)
-		_ = cmd
-		// FIXME: use cmd
 		d.m = newModel
+		return cmd
 
 	case "type":
 		var buf strings.Builder
@@ -200,22 +312,25 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) {
 		for _, r := range buf.String() {
 			messages = append(messages, tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune{r}}))
 		}
+		var cmd tea.Cmd
 		for _, msg := range messages {
-			newModel, cmd := d.m.Update(msg)
-			// FIXME: use cmd
-			_ = cmd
+			newModel, newCmd := d.m.Update(msg)
 			d.m = newModel
+			cmd = tea.Batch(cmd, newCmd)
 		}
+		return cmd
 
 	default:
 		if d.upd != nil {
 			t.Logf("%s: applying command %q via model updater", d.pos, cmd)
 			newModel, cmd := d.upd.TestUpdate(t, d.m, cmd, args...)
 			// FIXME: use cmd
-			_ = cmd
 			d.m = newModel
+			return cmd
 		} else {
 			t.Fatalf("%s: unknown command %q, and no ModelUpdater defined", d.pos, cmd)
 		}
 	}
+
+	return nil // unreachable
 }

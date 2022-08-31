@@ -36,9 +36,10 @@ ab illo inventore veritatis et quasi architecto beatae vitae dicta
 sunt explicabo.`
 
 func (m *Model) Init() tea.Cmd {
+	cmd := m.Model.Init()
 	s := strings.TrimSpace(loremIpsum)
 	m.SetContent(s)
-	return nil
+	return cmd
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
