@@ -19,7 +19,6 @@ func New(width, height int) Model {
 	return Model{
 		Model: viewport.New(width, height),
 	}
-	return m
 }
 
 const loremIpsum = `

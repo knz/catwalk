@@ -14,6 +14,6 @@ func TestModel(t *testing.T) {
 	// Use catwalk and datadriven to run all the tests in directory
 	// "testdata".
 	datadriven.Walk(t, "testdata", func(t *testing.T, path string) {
-		catwalk.RunModel(t, path, m)
+		catwalk.RunModel(t, path, &m, nil)
 	})
 }
