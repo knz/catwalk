@@ -1,0 +1,38 @@
+# The tests below demonstrate the observe directive argument.
+
+run
+----
+-- view:
+VALUE: '႒'🛇
+
+run observe=gostruct
+----
+-- gostruct:
+&catwalk.structModel{x:4242}
+
+run observe=debug
+----
+-- debug:
+DEBUG SAYS HI
+
+run trace=on observe=(view,gostruct)
+type a
+----
+-- trace: before "type a"
+-- trace: after "type"
+-- view:
+VALUE: '႒'🛇
+-- gostruct:
+&catwalk.structModel{x:4242}
+-- trace: before finish
+-- view:
+VALUE: '႒'🛇
+-- gostruct:
+&catwalk.structModel{x:4242}
+-- trace: processing 1 messages
+-- trace: msg tea.KeyMsg a
+-- trace: at end
+-- view:
+VALUE: '႓'🛇
+-- gostruct:
+&catwalk.structModel{x:4243}

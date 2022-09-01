@@ -1,0 +1,8 @@
+# Show that a WindowSizeMsg event is delivered at the beginning
+# when the option WithWindowSize is set.
+run
+----
+TEA PRINT: {MODEL INIT}
+TEA WINDOW SIZE: {80 25}
+-- view:
+MODEL VIEW🛇

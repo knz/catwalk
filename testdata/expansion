@@ -1,0 +1,74 @@
+# Check that init commands get expanded/processed.
+run
+----
+TEA PRINT: {init1}
+TEA PRINT: {init2}
+TEA PRINT: {init3}
+-- view:
+🛇
+
+# Check that update commands get expanded/processed.
+run
+type a
+----
+TEA PRINT: {upd1}
+TEA PRINT: {upd2}
+TEA PRINT: {upd3}
+-- view:
+🛇
+
+# Check that the TestUpdater gets called and its commands are expanded/processed.
+run
+unknowncmd
+----
+TEA PRINT: {tupd1}
+TEA PRINT: {tupd2}
+TEA PRINT: {tupd3}
+-- view:
+🛇
+
+# Show that commands can be reordered.
+run trace=on
+type a
+unknowncmd
+----
+-- trace: before "type a"
+-- trace: after "type"
+-- view:
+🛇
+-- trace: before "unknowncmd"
+-- trace: processing 1 messages
+-- trace: msg tea.KeyMsg a
+-- trace: processing 2 cmds
+-- trace: expanded 2 commands
+-- trace: expanded 2 commands
+-- trace: translated cmd: tea.printLineMessage
+-- trace: expanded 2 commands
+-- trace: translated cmd: tea.printLineMessage
+-- trace: expanded 2 commands
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: after "unknowncmd"
+-- view:
+🛇
+-- trace: before finish
+-- view:
+🛇
+-- trace: processing 6 messages
+-- trace: msg tea.printLineMessage {upd1}
+TEA PRINT: {upd1}
+-- trace: msg tea.printLineMessage {tupd1}
+TEA PRINT: {tupd1}
+-- trace: msg tea.printLineMessage {upd2}
+TEA PRINT: {upd2}
+-- trace: msg tea.printLineMessage {upd3}
+TEA PRINT: {upd3}
+-- trace: msg tea.printLineMessage {tupd2}
+TEA PRINT: {tupd2}
+-- trace: msg tea.printLineMessage {tupd3}
+TEA PRINT: {tupd3}
+-- trace: at end
+-- view:
+🛇

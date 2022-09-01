@@ -161,6 +161,9 @@ func (d *driver) trace(traceEnabled bool, format string, args ...interface{}) {
 }
 
 func (d *driver) processTeaCmds(trace bool) {
+	if len(d.cmds) > 0 {
+		d.trace(trace, "processing %d cmds", len(d.cmds))
+	}
 	// TODO(knz): handle timeouts.
 	var inputs []tea.Cmd
 	for {
@@ -205,6 +208,9 @@ var (
 )
 
 func (d *driver) processTeaMsgs(trace bool) {
+	if len(d.msgs) > 0 {
+		d.trace(trace, "processing %d messages", len(d.msgs))
+	}
 	for _, msg := range d.msgs {
 		rmsg := reflect.ValueOf(msg)
 		if rmsg.CanConvert(cmdsType) {
@@ -398,15 +404,15 @@ func (d *driver) Observe(t TB, what string) string {
 		type dbg interface{ Debug() string }
 		md, ok := d.m.(dbg)
 		if !ok {
-			t.Fatalf("%s: model does not support a Debug() string method")
+			t.Fatalf("%s: model does not support a Debug() string method", d.pos)
 		}
 		buf.WriteString(md.Debug())
 
 	case "gostruct":
-		buf.WriteString(pretty.Sprint(&buf, d.m))
+		buf.WriteString(pretty.Sprint(d.m))
 
 	default:
-		t.Fatalf("%s: unsupported observation: %q", what)
+		t.Fatalf("%s: unsupported observation: %q", d.pos, what)
 	}
 
 	return buf.String()
@@ -427,6 +433,8 @@ func (d *driver) getInt(t TB, v string) int {
 }
 
 func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
+	alt := false
+
 	switch cmd {
 	case "resize":
 		d.assertArgc(t, args, 2)
@@ -437,12 +445,24 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 
 	case "key":
 		d.assertArgc(t, args, 1)
-		k, ok := allKeys[args[0]]
-		if !ok {
-			t.Fatalf("%s: unknown key: %s", d.pos, args[0])
+		keyName := args[0]
+		if strings.HasPrefix(keyName, "alt+") {
+			alt = true
+			keyName = strings.TrimPrefix(keyName, "alt+")
 		}
-		msg := tea.KeyMsg(k)
-		d.addMsg(msg)
+		k, ok := allKeys[keyName]
+		if !ok && len(keyName) != 1 {
+			t.Fatalf("%s: unknown key: %s", d.pos, keyName)
+		}
+		if ok {
+			k.Alt = alt
+			msg := tea.KeyMsg(k)
+			d.addMsg(msg)
+			break
+		}
+		// Not a special key: it's runes.
+		args[0] = keyName
+		fallthrough
 
 	case "type":
 		var buf strings.Builder
@@ -453,7 +473,7 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 			buf.WriteString(arg)
 		}
 		for _, r := range buf.String() {
-			d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune{r}}))
+			d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune{r}, Alt: alt}))
 		}
 
 	default:
@@ -475,24 +495,20 @@ var allKeys = func() map[string]tea.Key {
 	for i := 0; ; i++ {
 		k := tea.Key{Type: tea.KeyType(i)}
 		keyName := k.String()
-		fmt.Println("found key:", keyName)
+		// fmt.Println("found key:", keyName)
 		if keyName == "" {
 			break
 		}
 		result[keyName] = k
-		k.Alt = true
-		result[k.String()] = k
 	}
 	for i := -2; ; i-- {
 		k := tea.Key{Type: tea.KeyType(i)}
 		keyName := k.String()
-		fmt.Println("found key:", keyName)
+		// fmt.Println("found key:", keyName)
 		if keyName == "" {
 			break
 		}
 		result[keyName] = k
-		k.Alt = true
-		result[k.String()] = k
 	}
 	return result
 }()

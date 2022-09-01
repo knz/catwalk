@@ -1,0 +1,126 @@
+# Show that the Init method is called at the beginning.
+run
+----
+TEA PRINT: {MODEL INIT}
+-- view:
+MODEL VIEW🛇
+
+subtest key_input
+
+run trace=on
+type abcd
+----
+-- trace: before "type abcd"
+-- trace: after "type"
+-- view:
+MODEL VIEW🛇
+-- trace: before finish
+-- view:
+MODEL VIEW🛇
+-- trace: processing 4 messages
+-- trace: msg tea.KeyMsg a
+-- trace: msg tea.KeyMsg b
+-- trace: msg tea.KeyMsg c
+-- trace: msg tea.KeyMsg d
+-- trace: processing 4 cmds
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: processing 4 messages
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: at end
+-- view:
+MODEL VIEW🛇
+
+run trace=on
+type ab
+type cd
+----
+-- trace: before "type ab"
+-- trace: after "type"
+-- view:
+MODEL VIEW🛇
+-- trace: before "type cd"
+-- trace: processing 2 messages
+-- trace: msg tea.KeyMsg a
+-- trace: msg tea.KeyMsg b
+-- trace: processing 2 cmds
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: after "type"
+-- view:
+MODEL VIEW🛇
+-- trace: before finish
+-- view:
+MODEL VIEW🛇
+-- trace: processing 4 messages
+-- trace: msg tea.KeyMsg c
+-- trace: msg tea.KeyMsg d
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: processing 2 cmds
+-- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.printLineMessage
+-- trace: processing 2 messages
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: at end
+-- view:
+MODEL VIEW🛇
+
+run trace=on
+key ctrl+c
+key alt+c
+key alt+ctrl+down
+----
+-- trace: before "key ctrl+c"
+-- trace: after "key"
+-- view:
+MODEL VIEW🛇
+-- trace: before "key alt+c"
+-- trace: processing 1 messages
+-- trace: msg tea.KeyMsg ctrl+c
+-- trace: processing 1 cmds
+-- trace: translated cmd: tea.printLineMessage
+-- trace: after "key"
+-- view:
+MODEL VIEW🛇
+-- trace: before "key alt+ctrl+down"
+-- trace: processing 2 messages
+-- trace: msg tea.KeyMsg alt+c
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: processing 1 cmds
+-- trace: translated cmd: tea.printLineMessage
+-- trace: after "key"
+-- view:
+MODEL VIEW🛇
+-- trace: before finish
+-- view:
+MODEL VIEW🛇
+-- trace: processing 2 messages
+-- trace: msg tea.KeyMsg alt+ctrl+down
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: processing 1 cmds
+-- trace: translated cmd: tea.printLineMessage
+-- trace: processing 1 messages
+-- trace: msg tea.printLineMessage {MODEL UPDATE}
+TEA PRINT: {MODEL UPDATE}
+-- trace: at end
+-- view:
+MODEL VIEW🛇
+
+subtest end

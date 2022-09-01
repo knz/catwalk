@@ -1,0 +1,6 @@
+# Show that the Init method is NOT called at the beginning
+# because the WithAutoInitDisabled option was set.
+run
+----
+-- view:
+MODEL VIEW🛇

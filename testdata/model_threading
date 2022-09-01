@@ -1,0 +1,28 @@
+# The tests below check that each time an Update or TestUpdate
+# method returns a new model, the test framework picks up the new
+# model and continues to work with it.
+
+run
+----
+-- view:
+VALUE: 0🛇
+
+run
+type a
+----
+-- view:
+VALUE: 1🛇
+
+run
+unknowncmd
+----
+TEA PRINT: {TEST UPDATE CALLED WITH unknowncmd []}
+-- view:
+VALUE: 1🛇
+
+run
+double
+----
+TEA PRINT: {TEST UPDATE CALLED WITH double []}
+-- view:
+VALUE: 2🛇
