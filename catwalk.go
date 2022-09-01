@@ -214,14 +214,6 @@ func (d *driver) processTeaMsgs(trace bool) {
 		d.trace(trace, "processing %d messages", len(d.msgs))
 	}
 	for _, msg := range d.msgs {
-		rmsg := reflect.ValueOf(msg)
-		if rmsg.CanConvert(cmdsType) {
-			rcmds := rmsg.Convert(cmdsType)
-			cmds := rcmds.Interface().([]tea.Cmd)
-			d.addCmds(cmds...)
-			continue
-		}
-
 		d.trace(trace, "msg %#v", msg)
 
 		switch rmsg.Type() {
