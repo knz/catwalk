@@ -216,7 +216,7 @@ func (d *driver) processTeaMsgs(trace bool) {
 	for _, msg := range d.msgs {
 		d.trace(trace, "msg %#v", msg)
 
-		switch rmsg.Type() {
+		switch reflect.TypeOf(msg) {
 		case printType:
 			fmt.Fprintf(&d.result, "TEA PRINT: %v\n", msg)
 		case szType:
