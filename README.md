@@ -20,50 +20,135 @@ multiple tests. When the implementation changes, the reference output
 can be quickly updated by re-running the tests with the `-rewrite`
 flag.
 
+## Example
 
-## Example use
+Let's test the `viewport` Bubble!
 
-Place in the go test file:
+First, we define a top-level model around `viewport`:
 
-``` go
-func TestModel(t *testing.T) {
-    // Define the model to test.
-    m := NewModel(40, 3)
+```go
+type Model struct {
+    viewport.Model
+}
 
-    // Optional: force output color codes, to debug colorization.
-    lipgloss.SetColorProfile(termenv.ANSI)
+var _ tea.Model = (*Model)(nil)
 
-    // Use catwalk and datadriven to run all the tests in directory
-    // "testdata".
-    datadriven.Walk(t, "testdata", func(t *testing.T, path string) {
-        catwalk.RunModel(t, path, &m)
-    })
+// New initializes a new model.
+func New(width, height int) *Model {
+    return &Model{
+        Model: viewport.New(width, height),
+    }
+}
+
+// Init adds some initial text inside the viewport.
+func (m *Model) Init() tea.Cmd {
+    cmd := m.Model.Init()
+    m.SetContent(`first line
+second line
+third line
+fourth line
+fifth line
+sixth line`)
+    return cmd
 }
 ```
 
-Then, place in a subdirectory called `testdata`, a text file with
-some arbitrary name (e.g. `example`), containing:
+Then, we define a Go test which runs the above model:
 
-``` text
-# Just a run directive without command is a no-op
-# and, by default, tests the resulting view.
+```go
+func TestModel(t *testing.T) {
+	// Initialize the model to test.
+	m := New(40, 3)
+
+    // Run all the tests in input file "testdata/viewport_tests"
+	catwalk.RunModel(t, "testdata/viewport_tests", m)
+}
+```
+
+Then, we populate some test directives inside `testdata/viewport_tests`:
+
+``` go
 run
 ----
 
-# A run directive that inputs the "q" keypress.
+# One line down
 run
-type q
+type j
+----
+
+# Two lines down
+run
+type jj
+----
+
+# One line up
+run
+key up
 ----
 ```
 
-Then, run your test with `go test . -args -rewrite` to generate the
-reference output.
+Then, we run the test: `go test .`.
 
-Then reload the test input file you've created above in your text
-editor, and observe: the test framework has updated the expected output!
+What happens: the test fails!
 
-Then, run your test again with `go test .` (without `-rewrite`!) to verify
-that your model still matches its expected output.
+```
+--- FAIL: TestModel (0.00s)
+    catwalk.go:64:
+        testdata/viewport_tests:1:
+        expected:
 
-See the `example` subdirectory in this repository for a concrete
-example applied to the `viewport` bubble.
+        found:
+        -- view:
+        first line␤
+        second line␤
+        third line🛇
+```
+
+This is because we haven't yet expressed
+what is the **expected output** for each step.
+
+Because it's tedious to do this manually, we can auto-generate
+the expected output from the actual output, using the `rewrite` flag:
+
+     go test . -args -rewrite
+
+Observe what happened with the input file:
+
+``` go
+run
+----
+-- view:
+first line␤
+second line␤
+third line🛇
+
+# One line down
+run
+type j
+----
+-- view:
+second line␤
+third line␤
+fourth line🛇
+
+# Two lines down
+run
+type jj
+----
+-- view:
+fourth line␤
+fifth line␤
+sixth line🛇
+
+# One line up
+run
+key up
+----
+-- view:
+third line␤
+fourth line␤
+fifth line🛇
+```
+
+Now each expected output reflects how the `viewport` reacts
+to the key presses. Now also `go test .` succeeds.

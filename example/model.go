@@ -16,8 +16,8 @@ type Model struct {
 var _ tea.Model = (*Model)(nil)
 
 // New initializes a new model.
-func New(width, height int) Model {
-	return Model{
+func New(width, height int) *Model {
+	return &Model{
 		Model: viewport.New(width, height),
 	}
 }
@@ -38,16 +38,28 @@ sunt explicabo.`
 
 func (m *Model) Init() tea.Cmd {
 	cmd := m.Model.Init()
-	s := strings.TrimSpace(loremIpsum)
-	m.SetContent(s)
+	m.SetContent(`first line
+second line
+third line
+fourth line
+fifth line
+sixth line`)
 	return cmd
 }
 
 var quitBinding = key.NewBinding(key.WithKeys("q"))
+var loremBinding = key.NewBinding(key.WithKeys("l"))
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if kmsg, ok := msg.(tea.KeyMsg); ok && key.Matches(kmsg, quitBinding) {
-		return m, tea.Quit
+	if kmsg, ok := msg.(tea.KeyMsg); ok {
+		switch {
+		case key.Matches(kmsg, quitBinding):
+			return m, tea.Quit
+		case key.Matches(kmsg, loremBinding):
+			s := strings.TrimSpace(loremIpsum)
+			m.SetContent(s)
+			return m, nil
+		}
 	}
 
 	newView, cmd := m.Model.Update(msg)

@@ -2,36 +2,36 @@ run
 ----
 TEA WINDOW SIZE: {40 3}
 -- view:
-[31mlorem ipsum dolor sit amet, consectetur [0m␤
-[31melit, sed do eiusmod tempor incididunt u[0m␤
-[31maliqua. Ut enim ad minim veniam, quis no[0m🛇
+first line ␤
+second line␤
+third line 🛇
 
 # One line down
 run
 type j
 ----
 -- view:
-[31melit, sed do eiusmod tempor incididunt u[0m␤
-[31maliqua. Ut enim ad minim veniam, quis no[0m␤
-[31mlaboris nisi ut aliquip ex ea commodo co[0m🛇
+second line␤
+third line ␤
+fourth line🛇
 
 # Two lines down
 run
 type jj
 ----
 -- view:
-[31mlaboris nisi ut aliquip ex ea commodo co[0m␤
-[31min reprehenderit in voluptate velit esse[0m␤
-[31mpariatur. Excepteur sint occaecat cupida[0m🛇
+fourth line␤
+fifth line ␤
+sixth line 🛇
 
 # One line up
 run
 key up
 ----
 -- view:
-[31maliqua. Ut enim ad minim veniam, quis no[0m␤
-[31mlaboris nisi ut aliquip ex ea commodo co[0m␤
-[31min reprehenderit in voluptate velit esse[0m🛇
+third line ␤
+fourth line␤
+fifth line 🛇
 
 # Check the exit key works.
 run
@@ -39,6 +39,6 @@ type q
 ----
 TEA QUIT
 -- view:
-[31maliqua. Ut enim ad minim veniam, quis no[0m␤
-[31mlaboris nisi ut aliquip ex ea commodo co[0m␤
-[31min reprehenderit in voluptate velit esse[0m🛇
+third line ␤
+fourth line␤
+fifth line 🛇

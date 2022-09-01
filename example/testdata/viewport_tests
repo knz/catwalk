@@ -1,0 +1,33 @@
+run
+----
+-- view:
+first line␤
+second line␤
+third line🛇
+
+# One line down
+run
+type j
+----
+-- view:
+second line␤
+third line␤
+fourth line🛇
+
+# Two lines down
+run
+type jj
+----
+-- view:
+fourth line␤
+fifth line␤
+sixth line🛇
+
+# One line up
+run
+key up
+----
+-- view:
+third line␤
+fourth line␤
+fifth line🛇
