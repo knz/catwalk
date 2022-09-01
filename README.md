@@ -1,7 +1,9 @@
 # catwalk
 
 [![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](https://pkg.go.dev/github.com/knz/catwalk)
+[![Build Status](https://github.com/knz/catwalk/workflows/build/badge.svg)](https://github.com/knz/catwalk/actions)
 [![Go ReportCard](https://goreportcard.com/badge/knz/catwalk)](https://goreportcard.com/report/knz/catwalk)
+[![Coverage Status](https://coveralls.io/repos/github/knz/catwalk/badge.svg)](https://coveralls.io/github/knz/catwalk)
 
 **catwalk** is a unit test library for Bubbletea TUI models.
 

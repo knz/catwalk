@@ -15,7 +15,7 @@ run observe=debug
 -- debug:
 DEBUG SAYS HI
 
-run trace=on observe=(view,gostruct)
+run trace=on observe=(view,gostruct,msgs,cmds)
 type a
 ----
 -- trace: before "type a"
@@ -24,15 +24,29 @@ type a
 VALUE: '႒'🛇
 -- gostruct:
 &catwalk.structModel{x:4242}
+-- msgs:
+msg queue sz: 1
+0:tea.KeyMsg: a
+-- cmds:
+command queue sz: 0
 -- trace: before finish
 -- view:
 VALUE: '႒'🛇
 -- gostruct:
 &catwalk.structModel{x:4242}
+-- msgs:
+msg queue sz: 1
+0:tea.KeyMsg: a
+-- cmds:
+command queue sz: 0
 -- trace: processing 1 messages
--- trace: msg tea.KeyMsg a
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{97}, Alt:false}
 -- trace: at end
 -- view:
 VALUE: '႓'🛇
 -- gostruct:
 &catwalk.structModel{x:4243}
+-- msgs:
+msg queue sz: 0
+-- cmds:
+command queue sz: 0

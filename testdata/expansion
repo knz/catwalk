@@ -38,11 +38,12 @@ unknowncmd
 🛇
 -- trace: before "unknowncmd"
 -- trace: processing 1 messages
--- trace: msg tea.KeyMsg a
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{97}, Alt:false}
 -- trace: processing 2 cmds
--- trace: expanded 2 commands
+-- trace: expanded 3 commands
 -- trace: expanded 2 commands
 -- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: <nil>
 -- trace: expanded 2 commands
 -- trace: translated cmd: tea.printLineMessage
 -- trace: expanded 2 commands
@@ -57,17 +58,17 @@ unknowncmd
 -- view:
 🛇
 -- trace: processing 6 messages
--- trace: msg tea.printLineMessage {upd1}
+-- trace: msg tea.printLineMessage{messageBody:"upd1"}
 TEA PRINT: {upd1}
--- trace: msg tea.printLineMessage {tupd1}
+-- trace: msg tea.printLineMessage{messageBody:"tupd1"}
 TEA PRINT: {tupd1}
--- trace: msg tea.printLineMessage {upd2}
+-- trace: msg tea.printLineMessage{messageBody:"upd2"}
 TEA PRINT: {upd2}
--- trace: msg tea.printLineMessage {upd3}
+-- trace: msg tea.printLineMessage{messageBody:"upd3"}
 TEA PRINT: {upd3}
--- trace: msg tea.printLineMessage {tupd2}
+-- trace: msg tea.printLineMessage{messageBody:"tupd2"}
 TEA PRINT: {tupd2}
--- trace: msg tea.printLineMessage {tupd3}
+-- trace: msg tea.printLineMessage{messageBody:"tupd3"}
 TEA PRINT: {tupd3}
 -- trace: at end
 -- view:

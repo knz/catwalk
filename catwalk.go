@@ -179,13 +179,15 @@ func (d *driver) processTeaCmds(trace bool) {
 		inputs = inputs[1:]
 		msg := cmd()
 
-		rmsg := reflect.ValueOf(msg)
-		if rmsg.CanConvert(cmdsType) {
-			rcmds := rmsg.Convert(cmdsType)
-			cmds := rcmds.Interface().([]tea.Cmd)
-			d.trace(trace, "expanded %d commands", len(cmds))
-			d.addCmds(cmds...)
-			continue
+		if msg != nil {
+			rmsg := reflect.ValueOf(msg)
+			if rmsg.CanConvert(cmdsType) {
+				rcmds := rmsg.Convert(cmdsType)
+				cmds := rcmds.Interface().([]tea.Cmd)
+				d.trace(trace, "expanded %d commands", len(cmds))
+				d.addCmds(cmds...)
+				continue
+			}
 		}
 
 		d.trace(trace, "translated cmd: %T", msg)
@@ -220,7 +222,7 @@ func (d *driver) processTeaMsgs(trace bool) {
 			continue
 		}
 
-		d.trace(trace, "msg %T %v", msg, msg)
+		d.trace(trace, "msg %#v", msg)
 
 		switch rmsg.Type() {
 		case printType:

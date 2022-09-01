@@ -8,33 +8,37 @@ MODEL VIEW🛇
 subtest key_input
 
 run trace=on
-type abcd
+type ab cd
 ----
--- trace: before "type abcd"
+-- trace: before "type ab cd"
 -- trace: after "type"
 -- view:
 MODEL VIEW🛇
 -- trace: before finish
 -- view:
 MODEL VIEW🛇
--- trace: processing 4 messages
--- trace: msg tea.KeyMsg a
--- trace: msg tea.KeyMsg b
--- trace: msg tea.KeyMsg c
--- trace: msg tea.KeyMsg d
--- trace: processing 4 cmds
+-- trace: processing 5 messages
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{97}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{98}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{32}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{99}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{100}, Alt:false}
+-- trace: processing 5 cmds
+-- trace: translated cmd: tea.enterAltScreenMsg
 -- trace: translated cmd: tea.printLineMessage
 -- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.enableMouseCellMotionMsg
 -- trace: translated cmd: tea.printLineMessage
--- trace: translated cmd: tea.printLineMessage
--- trace: processing 4 messages
--- trace: msg tea.printLineMessage {MODEL UPDATE}
+-- trace: processing 5 messages
+-- trace: msg tea.enterAltScreenMsg{}
+TEA ENTER ALT
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
 TEA PRINT: {MODEL UPDATE}
--- trace: msg tea.printLineMessage {MODEL UPDATE}
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
 TEA PRINT: {MODEL UPDATE}
--- trace: msg tea.printLineMessage {MODEL UPDATE}
-TEA PRINT: {MODEL UPDATE}
--- trace: msg tea.printLineMessage {MODEL UPDATE}
+-- trace: msg tea.enableMouseCellMotionMsg{}
+TEA ENABLE MOUSE CELL MOTION
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
 TEA PRINT: {MODEL UPDATE}
 -- trace: at end
 -- view:
@@ -50,10 +54,10 @@ type cd
 MODEL VIEW🛇
 -- trace: before "type cd"
 -- trace: processing 2 messages
--- trace: msg tea.KeyMsg a
--- trace: msg tea.KeyMsg b
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{97}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{98}, Alt:false}
 -- trace: processing 2 cmds
--- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.enterAltScreenMsg
 -- trace: translated cmd: tea.printLineMessage
 -- trace: after "type"
 -- view:
@@ -62,19 +66,19 @@ MODEL VIEW🛇
 -- view:
 MODEL VIEW🛇
 -- trace: processing 4 messages
--- trace: msg tea.KeyMsg c
--- trace: msg tea.KeyMsg d
--- trace: msg tea.printLineMessage {MODEL UPDATE}
-TEA PRINT: {MODEL UPDATE}
--- trace: msg tea.printLineMessage {MODEL UPDATE}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{99}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{100}, Alt:false}
+-- trace: msg tea.enterAltScreenMsg{}
+TEA ENTER ALT
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
 TEA PRINT: {MODEL UPDATE}
 -- trace: processing 2 cmds
--- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.enableMouseCellMotionMsg
 -- trace: translated cmd: tea.printLineMessage
 -- trace: processing 2 messages
--- trace: msg tea.printLineMessage {MODEL UPDATE}
-TEA PRINT: {MODEL UPDATE}
--- trace: msg tea.printLineMessage {MODEL UPDATE}
+-- trace: msg tea.enableMouseCellMotionMsg{}
+TEA ENABLE MOUSE CELL MOTION
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
 TEA PRINT: {MODEL UPDATE}
 -- trace: at end
 -- view:
@@ -91,7 +95,7 @@ key alt+ctrl+down
 MODEL VIEW🛇
 -- trace: before "key alt+c"
 -- trace: processing 1 messages
--- trace: msg tea.KeyMsg ctrl+c
+-- trace: msg tea.KeyMsg{Type:3, Runes:[]int32(nil), Alt:false}
 -- trace: processing 1 cmds
 -- trace: translated cmd: tea.printLineMessage
 -- trace: after "key"
@@ -99,11 +103,11 @@ MODEL VIEW🛇
 MODEL VIEW🛇
 -- trace: before "key alt+ctrl+down"
 -- trace: processing 2 messages
--- trace: msg tea.KeyMsg alt+c
--- trace: msg tea.printLineMessage {MODEL UPDATE}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{99}, Alt:true}
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
 TEA PRINT: {MODEL UPDATE}
 -- trace: processing 1 cmds
--- trace: translated cmd: tea.printLineMessage
+-- trace: translated cmd: tea.enableMouseCellMotionMsg
 -- trace: after "key"
 -- view:
 MODEL VIEW🛇
@@ -111,14 +115,65 @@ MODEL VIEW🛇
 -- view:
 MODEL VIEW🛇
 -- trace: processing 2 messages
--- trace: msg tea.KeyMsg alt+ctrl+down
--- trace: msg tea.printLineMessage {MODEL UPDATE}
-TEA PRINT: {MODEL UPDATE}
+-- trace: msg tea.KeyMsg{Type:-14, Runes:[]int32(nil), Alt:true}
+-- trace: msg tea.enableMouseCellMotionMsg{}
+TEA ENABLE MOUSE CELL MOTION
 -- trace: processing 1 cmds
 -- trace: translated cmd: tea.printLineMessage
 -- trace: processing 1 messages
--- trace: msg tea.printLineMessage {MODEL UPDATE}
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
 TEA PRINT: {MODEL UPDATE}
+-- trace: at end
+-- view:
+MODEL VIEW🛇
+
+subtest end
+
+subtest resize
+
+run
+resize 80 25
+----
+TEA WINDOW SIZE: {80 25}
+-- view:
+MODEL VIEW🛇
+
+subtest end
+
+subtest special_messages
+
+run
+type MmcaACxq
+----
+TEA DISABLE MOUSE
+TEA ENABLE MOUSE MOTION ALL
+TEA ENABLE MOUSE CELL MOTION
+TEA ENTER ALT
+TEA EXIT ALT
+TEA HIDE CURSOR
+TEA EXEC
+TEA QUIT
+-- view:
+MODEL VIEW🛇
+
+subtest end
+
+subtest cmd_returns_empty_msg
+
+run trace=on
+type e
+----
+-- trace: before "type e"
+-- trace: after "type"
+-- view:
+MODEL VIEW🛇
+-- trace: before finish
+-- view:
+MODEL VIEW🛇
+-- trace: processing 1 messages
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{101}, Alt:false}
+-- trace: processing 1 cmds
+-- trace: translated cmd: <nil>
 -- trace: at end
 -- view:
 MODEL VIEW🛇

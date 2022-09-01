@@ -20,7 +20,29 @@ var _ tea.Model = emptyModel{}
 func (emptyModel) Init() tea.Cmd {
 	return tea.Println("MODEL INIT")
 }
-func (emptyModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
+func (emptyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if kmsg, ok := msg.(tea.KeyMsg); ok && kmsg.Type == tea.KeyRunes {
+		switch string(kmsg.Runes) {
+		case "q":
+			return emptyModel{}, tea.Quit
+		case "M":
+			return emptyModel{}, tea.DisableMouse
+		case "m":
+			return emptyModel{}, tea.EnableMouseAllMotion
+		case "c":
+			return emptyModel{}, tea.EnableMouseCellMotion
+		case "a":
+			return emptyModel{}, tea.EnterAltScreen
+		case "A":
+			return emptyModel{}, tea.ExitAltScreen
+		case "C":
+			return emptyModel{}, tea.HideCursor
+		case "x":
+			return emptyModel{}, tea.ExecProcess(nil, nil)
+		case "e":
+			return emptyModel{}, func() tea.Msg { return nil }
+		}
+	}
 	return emptyModel{}, tea.Println("MODEL UPDATE")
 }
 func (emptyModel) View() string { return "MODEL VIEW" }
@@ -78,12 +100,12 @@ var _ tea.Model = cmdModel{}
 
 func (cmdModel) Init() tea.Cmd {
 	return tea.Batch(
-		tea.Println("init1"),
+		tea.Println("init1"), func() tea.Msg { return nil },
 		tea.Sequence(tea.Println("init2"), tea.Println("init3")))
 }
 func (cmdModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
 	return cmdModel{}, tea.Batch(
-		tea.Println("upd1"),
+		tea.Println("upd1"), func() tea.Msg { return nil },
 		tea.Sequence(tea.Println("upd2"), tea.Println("upd3")))
 }
 func (cmdModel) View() string { return "" }
