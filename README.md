@@ -152,3 +152,94 @@ fifth line🛇
 
 Now each expected output reflects how the `viewport` reacts
 to the key presses. Now also `go test .` succeeds.
+
+## Structure of a test file
+
+Test files contain zero or more tests, with the following structure:
+
+``` go
+<directive> <arguments>
+<optional: input commands...>
+----
+<expected output>
+```
+
+For example:
+
+``` go
+run
+----
+-- view:
+My bubble rendered here.
+
+run
+type q
+----
+-- view:
+My bubble reacted to "q".
+```
+
+Catwalk supports the `run` directive, which applies state changes to the
+model via its `Update` method.
+
+Under `run`, the following input commands are supported:
+
+- `type <text>`: produce a series of `tea.KeyMsg` with type
+  `tea.KeyRunes`. Can contain spaces.
+
+  For example: `type abc` produces 3 key presses for a, b, c.
+
+- `key <keyname>`: produce one `tea.KeyMsg` for the given key.
+
+  For example: `key ctrl+c`
+
+- `resize <W> <H>`: produce a `tea.WindowSizeMsg` with the specified size.
+
+You can also add support for your own input commands by passing a `ModelUpdater`
+to `catwalk.RunModel` with the `WithUpdater()` option:
+
+```go
+// ModelUpdater is an optional object passed alongside
+// a tea.Model in RunModel() which can apply state
+// change commands as input to a test.
+type ModelUpdater interface {
+	// TestUpdate is called for every unknown command
+	// under "run" directives in the input file.
+	TestUpdate(t TB, m tea.Model, cmd string, args ...string) (tea.Model, tea.Cmd)
+}
+```
+
+When a `ModelUpdater` is specified, its `TestUpdate()` method is called for every
+input command that is not part of the catwalk basic set.
+
+Finally, directives can take arguments. For example:
+
+```
+run observe=(gostruct,view)
+----
+```
+
+The `run` directive accepts the following arguments:
+
+- `observe`: what to look at as expected output (`observe=xx` or `observe=(xx,yy)`).
+
+  By default, `observe` is set to `view`: look at the model's `View()` method.
+  Alternatively, you can use the following observers:
+
+  - `gostruct`: show the contents of the model object as a go struct.
+  - `debug`: call the model's `Debug() string` method, if defined.
+
+- `trace`: detail the intermediate steps of the test.
+
+  Used for debugging tests.
+
+## Your turn!
+
+You can start using `catwalk` in your Bubbletea / Charm projects right
+away!
+
+If you have any questions or comments:
+
+- for bug fixes, feature requests, etc., [file an issue]()
+- for questions, suggestions, etc. you can come chat on the [Charm
+  Slack](https://charm.sh/slack/).
