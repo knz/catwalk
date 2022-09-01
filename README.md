@@ -20,6 +20,9 @@ multiple tests. When the implementation changes, the reference output
 can be quickly updated by re-running the tests with the `-rewrite`
 flag.
 
+**Why the name:** the framework forces the Tea models to "show
+themselves" on the runway of the test input files.
+
 ## Example
 
 Let's test the `viewport` Bubble!
