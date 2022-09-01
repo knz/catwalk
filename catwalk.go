@@ -181,7 +181,7 @@ func (d *driver) processTeaCmds(trace bool) {
 
 		if msg != nil {
 			rmsg := reflect.ValueOf(msg)
-			if rmsg.CanConvert(cmdsType) {
+			if rmsg.Type().ConvertibleTo(cmdsType) {
 				rcmds := rmsg.Convert(cmdsType)
 				cmds := rcmds.Interface().([]tea.Cmd)
 				d.trace(trace, "expanded %d commands", len(cmds))
