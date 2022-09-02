@@ -5,6 +5,7 @@ import (
 	"io"
 	"strconv"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -42,6 +43,11 @@ func (emptyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return emptyModel{}, tea.ExecProcess(nil, nil)
 		case "e":
 			return emptyModel{}, func() tea.Msg { return nil }
+		case "w":
+			return emptyModel{}, func() tea.Msg {
+				time.Sleep(70 * time.Millisecond)
+				return tea.Println("DELAYED HELLO")()
+			}
 		}
 	}
 	return emptyModel{}, tea.Println("MODEL UPDATE")

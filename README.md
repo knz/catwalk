@@ -182,8 +182,25 @@ type q
 My bubble reacted to "q".
 ```
 
-Catwalk supports the `run` directive, which applies state changes to the
-model via its `Update` method.
+Catwalk supports the following directives:
+
+- `run`: apply state changes to the  model via its `Update` method, then show the results.
+- `set`/`reset`: change configuration variables.
+
+Finally, directives can take arguments. For example:
+
+```
+run observe=(gostruct,view)
+----
+```
+
+This is explained further in the next sections.
+
+## The `run` directive
+
+`run` defines one unit test. It applies some input commands to the
+model then compares the resulting state of the model with a reference
+expected output.
 
 Under `run`, the following input commands are supported:
 
@@ -203,13 +220,6 @@ You can also add support for your own input commands by passing an
 option, and combine multiple updaters together using the
 `ChainUpdater()` function.
 
-Finally, directives can take arguments. For example:
-
-```
-run observe=(gostruct,view)
-----
-```
-
 The `run` directive accepts the following arguments:
 
 - `observe`: what to look at as expected output (`observe=xx` or `observe=(xx,yy)`).
@@ -220,11 +230,33 @@ The `run` directive accepts the following arguments:
   - `gostruct`: show the contents of the model object as a go struct.
   - `debug`: call the model's `Debug() string` method, if defined.
 
+  You can also add your own observers using the `WithObserver()` option.
+
 - `trace`: detail the intermediate steps of the test.
 
   Used for debugging tests.
 
-You can also add your own observers using the `WithObserver()` option.
+## The `set` and `reset` directives
+
+These can be used to configure parameters in the test driver.
+
+For example:
+
+``` go
+set cmd_timeout=100ms
+----
+cmd_timeout: 100ms
+
+reset cmd_timeout
+----
+ok
+```
+
+The following parameters are currently recognized:
+
+- `cmd_timeout`: how long to wait for a `tea.Cmd` to complete.
+  This is set by default to 20ms, which is sufficient to
+  ignore the commands of a blinking cursor.
 
 ## Your turn!
 

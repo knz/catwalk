@@ -2,6 +2,7 @@ package catwalk
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/cockroachdb/datadriven"
@@ -137,12 +139,19 @@ func RunModelFromString(t *testing.T, input string, m tea.Model, opts ...Option)
 
 // driver represents the test driver.
 type driver struct {
+	ctx    context.Context
+	cancel func()
+
 	m tea.Model
 
 	result bytes.Buffer
 
 	// Queued commands left for processing.
 	cmds []tea.Cmd
+
+	// cmdTimeout is how long to wait for a tea.Cmd
+	// to return a tea.Msg.
+	cmdTimeout time.Duration
 
 	// Queued messages left for processing.
 	msgs []tea.Msg
@@ -213,10 +222,17 @@ type Driver interface {
 	RunOneTest(t TB, d *datadriven.TestData) string
 }
 
+const defaultCmdTimeout time.Duration = 20 * time.Millisecond
+
 // NewDriver creates a test driver for the given model.
 func NewDriver(m tea.Model, opts ...Option) Driver {
+	ctx, cancel := context.WithCancel(context.Background())
 	d := &driver{
-		m: m,
+		ctx:    ctx,
+		cancel: cancel,
+
+		m:          m,
+		cmdTimeout: defaultCmdTimeout,
 		observers: map[string]Observer{
 			"view":     observeView,
 			"debug":    observeDebug,
@@ -254,7 +270,7 @@ func (d *driver) processTeaCmds(trace bool) {
 		}
 		cmd := inputs[0]
 		inputs = inputs[1:]
-		msg := cmd()
+		msg := d.runTeaCmd(cmd, trace)
 
 		if msg != nil {
 			rmsg := reflect.ValueOf(msg)
@@ -270,6 +286,22 @@ func (d *driver) processTeaCmds(trace bool) {
 		d.trace(trace, "translated cmd: %T", msg)
 		d.addMsg(msg)
 	}
+}
+
+func (d *driver) runTeaCmd(cmd tea.Cmd, trace bool) (res tea.Msg) {
+	ctx, cancel := context.WithTimeout(d.ctx, d.cmdTimeout)
+	defer cancel()
+
+	msg := make(chan tea.Msg, 1)
+	go func() {
+		msg <- cmd()
+	}()
+	select {
+	case <-ctx.Done():
+		d.trace(trace, "timeout waiting for command")
+	case res = <-msg:
+	}
+	return res
 }
 
 var (
@@ -339,112 +371,151 @@ func (d *driver) addMsg(msg tea.Msg) {
 	d.msgs = append(d.msgs, msg)
 }
 
-func (d *driver) Close(t TB) {}
+func (d *driver) Close(t TB) {
+	d.cancel()
+}
 
 func (d *driver) RunOneTest(t TB, td *datadriven.TestData) string {
 	// Save the input position.
 	d.pos = td.Pos
 
 	switch td.Cmd {
+	case "set", "reset":
+		return d.handleSet(t, td)
 	case "run":
-		d.result.Reset()
+		return d.handleRun(t, td)
+	default:
+		t.Fatalf("%s: unrecognized test directive: %s", td.Pos, td.Cmd)
+		panic("unreachable")
+	}
+}
 
-		// Observations: check if there's an observe=() key
-		// on the first test input line. If not, just observe the view.
-		var observe []string
-		seen := false
-		for i := range td.CmdArgs {
-			if td.CmdArgs[i].Key == "observe" {
-				observe = td.CmdArgs[i].Vals
-				seen = true
-				break
-			}
-		}
-		if !seen {
-			observe = []string{"view"}
-		}
+func (d *driver) handleSet(t TB, td *datadriven.TestData) string {
+	reset := td.Cmd == "reset"
+	if len(td.CmdArgs) != 1 ||
+		(!reset && len(td.CmdArgs[0].Vals) != 1) ||
+		(reset && len(td.CmdArgs[0].Vals) != 0) {
+		t.Fatalf("%s: invalid syntax", d.pos)
+	}
+	key := td.CmdArgs[0].Key
+	val := ""
+	if !reset {
+		val = td.CmdArgs[0].Vals[0]
+	}
 
-		traceEnabled := td.HasArg("trace")
-		trace := func(format string, args ...interface{}) {
-			d.trace(traceEnabled, format, args...)
+	switch key {
+	case "cmd_timeout":
+		if reset {
+			val = defaultCmdTimeout.String()
 		}
+		tm, err := time.ParseDuration(val)
+		if err != nil {
+			t.Fatalf("%s: invalid timeout value: %v", d.pos, err)
+		}
+		d.cmdTimeout = tm
+		val = d.cmdTimeout.String()
+	default:
+		t.Fatalf("%s: unknown option %q", d.pos, key)
+	}
+	if reset {
+		return "ok"
+	}
+	return fmt.Sprintf("%s: %s", key, val)
+}
 
-		doObserve := func() {
-			for _, obs := range observe {
-				o := d.Observe(t, obs)
-				d.result.WriteString(o)
-				// Terminate items with a newline if there's none yet.
-				if d.result.Len() > 0 {
-					if d.result.Bytes()[d.result.Len()-1] != '\n' {
-						d.result.WriteByte('\n')
-					}
+func (d *driver) handleRun(t TB, td *datadriven.TestData) string {
+	d.result.Reset()
+
+	// Observations: check if there's an observe=() key
+	// on the first test input line. If not, just observe the view.
+	var observe []string
+	seen := false
+	for i := range td.CmdArgs {
+		if td.CmdArgs[i].Key == "observe" {
+			observe = td.CmdArgs[i].Vals
+			seen = true
+			break
+		}
+	}
+	if !seen {
+		observe = []string{"view"}
+	}
+
+	traceEnabled := td.HasArg("trace")
+	trace := func(format string, args ...interface{}) {
+		d.trace(traceEnabled, format, args...)
+	}
+
+	doObserve := func() {
+		for _, obs := range observe {
+			o := d.Observe(t, obs)
+			d.result.WriteString(o)
+			// Terminate items with a newline if there's none yet.
+			if d.result.Len() > 0 {
+				if d.result.Bytes()[d.result.Len()-1] != '\n' {
+					d.result.WriteByte('\n')
 				}
 			}
 		}
-
-		// Process the initialization, if not done yet.
-		if !d.startDone {
-			if !d.disableAutoInit {
-				trace("calling Init")
-				d.addCmds(d.m.Init())
-				d.processTeaCmds(traceEnabled)
-			}
-
-			if d.autoSize {
-				msg := tea.WindowSizeMsg{Width: d.width, Height: d.height}
-				d.addMsg(msg)
-			}
-			d.startDone = true
-		}
-
-		// Process the commands in the test's input.
-		testInputCommands := strings.Split(td.Input, "\n")
-
-		for _, testInputCmd := range testInputCommands {
-			testInputCmd = strings.TrimSpace(testInputCmd)
-			if testInputCmd == "" || strings.HasPrefix(testInputCmd, "#") {
-				// Comment or emptyline.
-				continue
-			}
-
-			trace("before %q", testInputCmd)
-
-			// If the previous testInputCmd produced
-			// some tea.Cmds, process them now.
-			d.processTeaMsgs(traceEnabled)
-
-			// Apply the new testInputCmd.
-			args := strings.Split(testInputCmd, " ")
-			testInputCmd = args[0]
-			args = args[1:]
-			cmd := d.ApplyTextCommand(t, testInputCmd, args...)
-			d.addCmds(cmd)
-			d.processTeaCmds(traceEnabled)
-
-			if traceEnabled {
-				trace("after %q", testInputCmd)
-				doObserve()
-			}
-		}
-
-		if traceEnabled {
-			trace("before finish")
-			doObserve()
-		}
-		// Last round of command execution.
-		d.processTeaMsgs(traceEnabled)
-		d.processTeaCmds(traceEnabled)
-		d.processTeaMsgs(traceEnabled)
-
-		trace("at end")
-		doObserve()
-		return d.result.String()
-
-	default:
-		t.Fatalf("%s: unrecognized test directive: %s", td.Pos, td.Cmd)
 	}
 
-	return "unreachable"
+	// Process the initialization, if not done yet.
+	if !d.startDone {
+		if !d.disableAutoInit {
+			trace("calling Init")
+			d.addCmds(d.m.Init())
+			d.processTeaCmds(traceEnabled)
+		}
+
+		if d.autoSize {
+			msg := tea.WindowSizeMsg{Width: d.width, Height: d.height}
+			d.addMsg(msg)
+		}
+		d.startDone = true
+	}
+
+	// Process the commands in the test's input.
+	testInputCommands := strings.Split(td.Input, "\n")
+
+	for _, testInputCmd := range testInputCommands {
+		testInputCmd = strings.TrimSpace(testInputCmd)
+		if testInputCmd == "" || strings.HasPrefix(testInputCmd, "#") {
+			// Comment or emptyline.
+			continue
+		}
+
+		trace("before %q", testInputCmd)
+
+		// If the previous testInputCmd produced
+		// some tea.Cmds, process them now.
+		d.processTeaMsgs(traceEnabled)
+
+		// Apply the new testInputCmd.
+		args := strings.Split(testInputCmd, " ")
+		testInputCmd = args[0]
+		args = args[1:]
+		cmd := d.ApplyTextCommand(t, testInputCmd, args...)
+		d.addCmds(cmd)
+		d.processTeaCmds(traceEnabled)
+
+		if traceEnabled {
+			trace("after %q", testInputCmd)
+			doObserve()
+		}
+	}
+
+	if traceEnabled {
+		trace("before finish")
+		doObserve()
+	}
+	// Last round of command execution.
+	d.processTeaMsgs(traceEnabled)
+	d.processTeaCmds(traceEnabled)
+	d.processTeaMsgs(traceEnabled)
+
+	trace("at end")
+	doObserve()
+	return d.result.String()
 }
 
 func (d *driver) Observe(t TB, what string) string {

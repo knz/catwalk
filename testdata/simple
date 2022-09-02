@@ -179,3 +179,43 @@ MODEL VIEW🛇
 MODEL VIEW🛇
 
 subtest end
+
+subtest cmd_timeout
+
+run trace=on
+type w
+----
+-- trace: before "type w"
+-- trace: after "type"
+-- view:
+MODEL VIEW🛇
+-- trace: before finish
+-- view:
+MODEL VIEW🛇
+-- trace: processing 1 messages
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{119}, Alt:false}
+-- trace: processing 1 cmds
+-- trace: timeout waiting for command
+-- trace: translated cmd: <nil>
+-- trace: at end
+-- view:
+MODEL VIEW🛇
+
+
+set cmd_timeout=200ms
+----
+cmd_timeout: 200ms
+
+run
+type w
+----
+TEA PRINT: {DELAYED HELLO}
+-- view:
+MODEL VIEW🛇
+
+reset cmd_timeout
+----
+ok
+
+
+subtest end
