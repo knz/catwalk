@@ -64,6 +64,18 @@ func TestModelThreading(t *testing.T) {
 	RunModel(t, "testdata/model_threading", intModel(0), WithUpdater(updater))
 }
 
+// TestFromString checks that a test can run from a string input directly.
+func TestFromString(t *testing.T) {
+	const test = `
+run
+----
+TEA PRINT: {MODEL INIT}
+-- view:
+MODEL VIEW🛇
+`
+	RunModelFromString(t, test, emptyModel{})
+}
+
 // TestObserver checks that a test can use a custom observer.
 func TestObserver(t *testing.T) {
 	const test = `
