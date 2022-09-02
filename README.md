@@ -7,8 +7,8 @@
 
 **catwalk** is a unit test library for Bubbletea TUI models.
 
-It enables implementers to verify the state of models as
-they process `tea.Msg` objects through their `Update` method.
+It enables implementers to verify the state of models and their `View`
+as they process `tea.Msg` objects through their `Update` method.
 
 It is implemented on top of
 [datadriven](https://github.com/cockroachdb/datadriven), an extension
