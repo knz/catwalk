@@ -58,10 +58,12 @@ func WithWindowSize(width, height int) Option {
 // To apply RunModel on all the test files in a directory,
 // use datadriven.Walk.
 func RunModel(t *testing.T, path string, m tea.Model, opts ...Option) {
+	t.Helper()
 	d := NewDriver(m, opts...)
 	defer d.Close(t)
 
 	datadriven.RunTest(t, path, func(t *testing.T, td *datadriven.TestData) string {
+		t.Helper()
 		return d.RunOneTest(t, td)
 	})
 }
