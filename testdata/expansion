@@ -19,7 +19,7 @@ TEA PRINT: {upd3}
 
 # Check that the TestUpdater gets called and its commands are expanded/processed.
 run
-unknowncmd
+noopcmd
 ----
 TEA PRINT: {tupd1}
 TEA PRINT: {tupd2}
@@ -30,13 +30,13 @@ TEA PRINT: {tupd3}
 # Show that commands can be reordered.
 run trace=on
 type a
-unknowncmd
+noopcmd
 ----
 -- trace: before "type a"
 -- trace: after "type"
 -- view:
 🛇
--- trace: before "unknowncmd"
+-- trace: before "noopcmd"
 -- trace: processing 1 messages
 -- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{97}, Alt:false}
 -- trace: processing 2 cmds
@@ -51,7 +51,7 @@ unknowncmd
 -- trace: translated cmd: tea.printLineMessage
 -- trace: translated cmd: tea.printLineMessage
 -- trace: translated cmd: tea.printLineMessage
--- trace: after "unknowncmd"
+-- trace: after "noopcmd"
 -- view:
 🛇
 -- trace: before finish
