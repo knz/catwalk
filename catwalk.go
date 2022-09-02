@@ -122,6 +122,19 @@ func RunModel(t *testing.T, path string, m tea.Model, opts ...Option) {
 	})
 }
 
+// RunModelFromString is a version of RunModel which takes the input
+// test directives from a string directly.
+func RunModelFromString(t *testing.T, input string, m tea.Model, opts ...Option) {
+	t.Helper()
+	d := NewDriver(m, opts...)
+	defer d.Close(t)
+
+	datadriven.RunTestFromString(t, input, func(t *testing.T, td *datadriven.TestData) string {
+		t.Helper()
+		return d.RunOneTest(t, td)
+	})
+}
+
 // driver represents the test driver.
 type driver struct {
 	m tea.Model
