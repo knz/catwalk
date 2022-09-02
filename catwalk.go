@@ -2,7 +2,9 @@ package catwalk
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -13,27 +15,79 @@ import (
 	"github.com/kr/pretty"
 )
 
-// ModelUpdater is an optional object passed alongside
-// a tea.Model in RunModel() which can apply state
-// change commands as input to a test.
-type ModelUpdater interface {
-	// TestUpdate is called for every unknown command
-	// under "run" directives in the input file.
-	TestUpdate(t TB, m tea.Model, cmd string, args ...string) (tea.Model, tea.Cmd)
+// Updater is an optional function added to RunModel(), which can
+// apply state change commands as input to a test.
+//
+// It should return false in the first return value to indicate that
+// the command is not supported.
+//
+// It can return an error e.g. to indicate that the command is
+// supported but its arguments use invalid syntax, or that the model
+// is in an invalid state.
+type Updater func(m tea.Model, testCmd string, args ...string) (supported bool, newModel tea.Model, teaCmd tea.Cmd, err error)
+
+// WithUpdater adds the specified model updater to the test.
+// It is possible to use multiple WithUpdater options, which will
+// chain them automatically (using ChainUpdaters).
+func WithUpdater(upd Updater) Option {
+	return func(d *driver) {
+		d.upd = ChainUpdaters(d.upd, upd)
+	}
+}
+
+// ChainUpdaters chains the specified updaters into a resulting updater
+// that supports all the commands in the chain. Test input commands
+// are passed to each updater in turn until the first updater
+// that supports it.
+//
+// For example:
+// - upd1 supports command "print"
+// - upd2 supports command "get"
+// - ChainUpdaters(upd1, upd2) will support both commands "print" and "get.
+func ChainUpdaters(upds ...Updater) Updater {
+	actual := make([]Updater, 0, len(upds))
+	for _, u := range upds {
+		if u != nil {
+			actual = append(actual, u)
+		}
+	}
+	if len(actual) == 1 {
+		return actual[0]
+	}
+	return func(m tea.Model, inputCmd string, args ...string) (supported bool, newModel tea.Model, teaCmd tea.Cmd, err error) {
+		for _, upd := range actual {
+			supported, newModel, teaCmd, err = upd(m, inputCmd, args...)
+			if supported || err != nil {
+				return supported, newModel, teaCmd, err
+			}
+		}
+		// None of the updaters supported the command.
+		return false, nil, nil, nil
+	}
+}
+
+// Observer is an optional function added to RunModel(), which can
+// extract information from the model to serve as expected output in
+// tests.
+type Observer func(out io.Writer, m tea.Model) error
+
+// WithObserver tells the test driver to support an additional
+// observer with the given function.
+//
+// For example, after WithObserver("hello", myObserver)
+// The function myObserver() will be called every time
+// a test specifies `observe=hello` in the run directive.
+func WithObserver(what string, obs Observer) Option {
+	return func(d *driver) {
+		d.observers[what] = obs
+	}
 }
 
 // Option is the type of an option which can be specified
 // with RunModel or NewDriver.
 type Option func(*driver)
 
-// WithUpdater adds the specified model updater to the test.
-func WithUpdater(upd ModelUpdater) Option {
-	return func(d *driver) {
-		d.upd = upd
-	}
-}
-
-// WithAutoInitDisabled tells the test to not automatically
+// WithAutoInitDisabled tells the test driver to not automatically
 // initialize the model (via the Init method) upon first use.
 func WithAutoInitDisabled() Option {
 	return func(d *driver) {
@@ -80,8 +134,11 @@ type driver struct {
 	// Queued messages left for processing.
 	msgs []tea.Msg
 
+	// Test observers.
+	observers map[string]Observer
+
 	// Test model updater (optional).
-	upd ModelUpdater
+	upd Updater
 
 	startDone bool
 
@@ -147,6 +204,11 @@ type Driver interface {
 func NewDriver(m tea.Model, opts ...Option) Driver {
 	d := &driver{
 		m: m,
+		observers: map[string]Observer{
+			"view":     observeView,
+			"debug":    observeDebug,
+			"gostruct": observeGoStruct,
+		},
 	}
 
 	for _, opt := range opts {
@@ -386,32 +448,43 @@ func (d *driver) Observe(t TB, what string) string {
 	case "cmds":
 		fmt.Fprintf(&buf, "command queue sz: %d\n", len(d.cmds))
 
-	case "view":
-		o := d.m.View()
-		// Make newlines visible.
-		o = strings.ReplaceAll(o, "\n", "␤\n")
-		// Add a "no newline at end" marker if there was no newline at the end.
-		if len(o) == 0 || o[len(o)-1] != '\n' {
-			o += "🛇"
-		}
-		buf.WriteString(o)
-
-	case "debug":
-		type dbg interface{ Debug() string }
-		md, ok := d.m.(dbg)
-		if !ok {
-			t.Fatalf("%s: model does not support a Debug() string method", d.pos)
-		}
-		buf.WriteString(md.Debug())
-
-	case "gostruct":
-		buf.WriteString(pretty.Sprint(d.m))
-
 	default:
-		t.Fatalf("%s: unsupported observation: %q", d.pos, what)
+		obs, ok := d.observers[what]
+		if !ok {
+			t.Fatalf("%s: unsupported observer %q, did you call WithObserver()?", d.pos, what)
+		}
+		if err := obs(&buf, d.m); err != nil {
+			t.Fatalf("%s: observing %q: %v", d.pos, what, err)
+		}
 	}
-
 	return buf.String()
+}
+
+func observeView(buf io.Writer, m tea.Model) error {
+	o := m.View()
+	// Make newlines visible.
+	o = strings.ReplaceAll(o, "\n", "␤\n")
+	// Add a "no newline at end" marker if there was no newline at the end.
+	if len(o) == 0 || o[len(o)-1] != '\n' {
+		o += "🛇"
+	}
+	_, err := io.WriteString(buf, o)
+	return err
+}
+
+func observeDebug(buf io.Writer, m tea.Model) error {
+	type dbg interface{ Debug() string }
+	md, ok := m.(dbg)
+	if !ok {
+		return errors.New("model does not support a Debug() string method")
+	}
+	_, err := io.WriteString(buf, md.Debug())
+	return err
+}
+
+func observeGoStruct(buf io.Writer, m tea.Model) error {
+	_, err := io.WriteString(buf, pretty.Sprint(m))
+	return err
 }
 
 func (d *driver) assertArgc(t TB, args []string, expected int) {
@@ -475,11 +548,17 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 	default:
 		if d.upd != nil {
 			t.Logf("%s: applying command %q via model updater", d.pos, cmd)
-			newModel, cmd := d.upd.TestUpdate(t, d.m, cmd, args...)
+			supported, newModel, teaCmd, err := d.upd(d.m, cmd, args...)
+			if err != nil {
+				t.Fatalf("%s: updater error: %v", err)
+			}
+			if !supported {
+				t.Fatalf("%s: unknown command %q", d.pos, cmd)
+			}
 			d.m = newModel
-			return cmd
+			return teaCmd
 		} else {
-			t.Fatalf("%s: unknown command %q, and no ModelUpdater defined", d.pos, cmd)
+			t.Fatalf("%s: unknown command %q, and no Updater defined", d.pos, cmd)
 		}
 	}
 

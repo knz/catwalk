@@ -60,7 +60,7 @@ func TestInitWindowSize(t *testing.T) {
 // TestModelThreading checks that catwalk preserves the model returned
 // by the Update function.
 func TestModelThreading(t *testing.T) {
-	RunModel(t, "testdata/model_threading", intModel(0), WithUpdater(updater{}))
+	RunModel(t, "testdata/model_threading", intModel(0), WithUpdater(updater))
 }
 
 type intModel int
@@ -76,22 +76,22 @@ func (m intModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
 }
 func (m intModel) View() string { return "VALUE: " + strconv.Itoa(int(m)) }
 
-type updater struct{}
-
-var _ ModelUpdater = updater{}
-
-func (updater) TestUpdate(t TB, m tea.Model, cmd string, args ...string) (tea.Model, tea.Cmd) {
+func updater(m tea.Model, cmd string, args ...string) (bool, tea.Model, tea.Cmd, error) {
 	im := m.(intModel)
-	if cmd == "double" {
+	switch cmd {
+	case "double":
 		im = im * 2
+	case "noopcmd":
+	default:
+		return false, nil, nil, nil
 	}
-	return im, tea.Printf("TEST UPDATE CALLED WITH %s %v", cmd, args)
+	return true, im, tea.Printf("TEST UPDATE CALLED WITH %s %v", cmd, args), nil
 }
 
 // TestCmdExpansion checks that tea.Batch and tea.Sequence are processed
 // properly.
 func TestCmdExpansion(t *testing.T) {
-	RunModel(t, "testdata/expansion", cmdModel{}, WithUpdater(cmdUpdater{}))
+	RunModel(t, "testdata/expansion", cmdModel{}, WithUpdater(cmdUpdater))
 }
 
 type cmdModel struct{}
@@ -110,14 +110,10 @@ func (cmdModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
 }
 func (cmdModel) View() string { return "" }
 
-type cmdUpdater struct{}
-
-var _ ModelUpdater = cmdUpdater{}
-
-func (cmdUpdater) TestUpdate(t TB, m tea.Model, cmd string, args ...string) (tea.Model, tea.Cmd) {
-	return m, tea.Batch(
+func cmdUpdater(m tea.Model, cmd string, args ...string) (bool, tea.Model, tea.Cmd, error) {
+	return true, m, tea.Batch(
 		tea.Println("tupd1"),
-		tea.Sequence(tea.Println("tupd2"), tea.Println("tupd3")))
+		tea.Sequence(tea.Println("tupd2"), tea.Println("tupd3"))), nil
 }
 
 // TestObserve tests the various accepted values for the "observe"
@@ -141,3 +137,36 @@ func (s *structModel) Update(tea.Msg) (tea.Model, tea.Cmd) {
 func (s *structModel) View() string { return fmt.Sprintf("VALUE: %q", s.x) }
 
 func (s *structModel) Debug() string { return "DEBUG SAYS HI" }
+
+func TestChainUpdaters(t *testing.T) {
+	upd1 := func(_ tea.Model, cmd string, _ ...string) (bool, tea.Model, tea.Cmd, error) {
+		if cmd == "hello" {
+			return true, nil, nil, nil
+		}
+		return false, nil, nil, nil
+	}
+	upd2 := func(_ tea.Model, cmd string, _ ...string) (bool, tea.Model, tea.Cmd, error) {
+		if cmd == "world" {
+			return true, nil, nil, nil
+		}
+		return false, nil, nil, nil
+	}
+
+	upd := ChainUpdaters(upd1, upd2)
+
+	if s, _, _, _ := ChainUpdaters(upd1)(nil, "hello"); !s {
+		t.Errorf("updater doesn't propagate single argument")
+	}
+	if s, _, _, _ := upd(nil, "hello"); !s {
+		t.Errorf("first updater did not register")
+	}
+	if s, _, _, _ := upd(nil, "world"); !s {
+		t.Errorf("2nd updater did not register")
+	}
+	if s, _, _, _ := upd(nil, "unknown"); s {
+		t.Errorf("surprising updater result")
+	}
+	if s, _, _, _ := ChainUpdaters()(nil, "unknown"); s {
+		t.Errorf("surprising updater result")
+	}
+}

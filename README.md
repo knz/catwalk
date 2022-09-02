@@ -198,22 +198,10 @@ Under `run`, the following input commands are supported:
 
 - `resize <W> <H>`: produce a `tea.WindowSizeMsg` with the specified size.
 
-You can also add support for your own input commands by passing a `ModelUpdater`
-to `catwalk.RunModel` with the `WithUpdater()` option:
-
-```go
-// ModelUpdater is an optional object passed alongside
-// a tea.Model in RunModel() which can apply state
-// change commands as input to a test.
-type ModelUpdater interface {
-	// TestUpdate is called for every unknown command
-	// under "run" directives in the input file.
-	TestUpdate(t TB, m tea.Model, cmd string, args ...string) (tea.Model, tea.Cmd)
-}
-```
-
-When a `ModelUpdater` is specified, its `TestUpdate()` method is called for every
-input command that is not part of the catwalk basic set.
+You can also add support for your own input commands by passing an
+`Updater` function to `catwalk.RunModel` with the `WithUpdater()`
+option, and combine multiple updaters together using the
+`ChainUpdater()` function.
 
 Finally, directives can take arguments. For example:
 
@@ -235,6 +223,8 @@ The `run` directive accepts the following arguments:
 - `trace`: detail the intermediate steps of the test.
 
   Used for debugging tests.
+
+You can also add your own observers using the `WithObserver()` option.
 
 ## Your turn!
 

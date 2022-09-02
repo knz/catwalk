@@ -14,9 +14,9 @@ type a
 VALUE: 1🛇
 
 run
-unknowncmd
+noopcmd
 ----
-TEA PRINT: {TEST UPDATE CALLED WITH unknowncmd []}
+TEA PRINT: {TEST UPDATE CALLED WITH noopcmd []}
 -- view:
 VALUE: 1🛇
 
