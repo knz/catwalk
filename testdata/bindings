@@ -1,0 +1,59 @@
+# Initially, MyKey is not bound.
+run
+type c
+----
+TEA PRINT: {UNKOWN KEY}
+-- view:
+VALUE: 1␤
+ 🛇
+
+# Let's bind MyKey to "c".
+# After that, typing "c" will be recognized.
+run
+keybind hello.MyKey c
+type c
+----
+TEA PRINT: {MYKEY RECOGNIZED}
+-- view:
+VALUE: 2␤
+ 🛇
+
+# Let's change the help text and check
+# the help widget updates accordingly.
+run
+keyhelp hello.MyKey c says hi
+----
+-- view:
+VALUE: 2␤
+c says hi🛇
+
+# Let's disable the binding.
+# The help text becomes hidden.
+run
+keybind hello.MyKey disable
+type c
+----
+TEA PRINT: {UNKOWN KEY}
+-- view:
+VALUE: 3␤
+
+# Let's re-enable the binding.
+# This shows the help text again.
+run
+keybind hello.MyKey enable
+type c
+----
+TEA PRINT: {MYKEY RECOGNIZED}
+-- view:
+VALUE: 4␤
+c says hi🛇
+
+# Show what happens when we unbind entirely.
+run
+keybind hello.MyKey unbind
+type c
+----
+TEA PRINT: {UNKOWN KEY}
+-- view:
+VALUE: 5␤
+ 🛇
