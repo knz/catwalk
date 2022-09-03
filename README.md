@@ -311,7 +311,7 @@ func TestStyles(t *testing.T) {
 }
 ```
 
-See the test `TestStyles` in `stylles_test.go` and the input file
+See the test `TestStyles` in `styles_test.go` and the input file
 `testdata/styles` for an example.
 
 ## Advanced topic: testing key bindings
