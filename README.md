@@ -342,7 +342,7 @@ To declare a `KeyMap` in a test, use the option `catwalk.WithUpdater(catwalk.Key
 ``` go
 func TestBindings(t *testing.T) {
   m := New(...)
-  catwalk.RunModel(t, "testdata/bindings", helpModel{}, catwalk.WithUpdater(
+  catwalk.RunModel(t, "testdata/bindings", m, catwalk.WithUpdater(
     // The string "hello" is the prefix for identifying the keymap in tests.
 	// Useful when the model contains multiple keymaps.
     catwalk.KeyMapUpdater("hello",
@@ -363,7 +363,7 @@ Alternatively, if your model implements `tea.Model` by reference (i.e. the addre
 ``` go
 func TestBindings(t *testing.T) {
   m := New(...)
-  catwalk.RunModel(t, "testdata/bindings", helpModel{}, catwalk.WithUpdater(
+  catwalk.RunModel(t, "testdata/bindings", &m, catwalk.WithUpdater(
     // The string "hello" is the prefix for identifying the keymap in tests.
 	// Useful when the model contains multiple keymaps.
     KeyMapUpdater("hello", catwalk.SimpleKeyMapApplier(&m.KeyMap))))

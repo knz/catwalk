@@ -113,7 +113,7 @@ func TestChangeKeyBinding(t *testing.T) {
 	}
 }
 
-// TestRebind checks the key rebind commands/
+// TestRebind checks the key rebind commands.
 func TestRebind(t *testing.T) {
 	t.Run("by-value", func(t *testing.T) {
 		upd1 := KeyMapUpdater("hello", func(m tea.Model, fn func(interface{}) error) (tea.Model, error) {
