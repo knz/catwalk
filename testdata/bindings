@@ -52,7 +52,9 @@ c says hi 🛇
 # We can also operate on multiple sets of keybindings.
 run
 keybind hello.MyKey d
+keyhelp hello.MyKey d says hello
 keybind world.Other c
+keyhelp world.Other c says more
 type c
 type d
 ----
@@ -60,7 +62,7 @@ TEA PRINT: {OTHERKEY RECOGNIZED}
 TEA PRINT: {MYKEY RECOGNIZED}
 -- view:
 VALUE: 6␤
-c says hi 🛇
+d says helloc says more🛇
 
 # Show what happens when we unbind entirely.
 run
@@ -70,4 +72,4 @@ type d
 TEA PRINT: {UNKOWN KEY}
 -- view:
 VALUE: 7␤
-  🛇
+ c says more🛇

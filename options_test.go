@@ -48,3 +48,26 @@ func TestChainUpdaters(t *testing.T) {
 		t.Errorf("surprising updater result")
 	}
 }
+
+func TestChainComplexUpdaters(t *testing.T) {
+	hm := &helpModelR{}
+	upd1 := KeyMapUpdater("hello", SimpleKeyMapApplier(&hm.KeyMap))
+	upd2 := StylesUpdater("help", SimpleStylesApplier(&hm.help.Styles))
+	upd3 := func(m tea.Model, cmd string, args ...string) (bool, tea.Model, tea.Cmd, error) {
+		m.(*helpModelR).val = 123
+		return true, m, nil, nil
+	}
+
+	const test = `
+run
+keybind hello.MyKey ctrl+c
+keyhelp hello.MyKey C-c break
+restyle help.Ellipsis foreground: #f00
+othercmd
+----
+-- view:
+VALUE: 123␤
+C-c break 🛇`
+
+	RunModelFromString(t, test, hm, WithUpdater(upd1), WithUpdater(upd2), WithUpdater(upd3))
+}
