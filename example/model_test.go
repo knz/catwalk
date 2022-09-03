@@ -25,5 +25,10 @@ func TestColors(t *testing.T) {
 	lipgloss.SetColorProfile(termenv.ANSI)
 	m.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 
-	catwalk.RunModel(t, "testdata/example", m, catwalk.WithWindowSize(40, 3))
+	catwalk.RunModel(t, "testdata/example", m,
+		catwalk.WithWindowSize(40, 3),
+		catwalk.WithUpdater(
+			catwalk.StylesUpdater("view",
+				catwalk.SimpleStylesApplier(m))),
+	)
 }

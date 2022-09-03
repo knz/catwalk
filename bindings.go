@@ -41,7 +41,7 @@ func KeyMapUpdater(prefix string, apply KeyMapApplier) Updater {
 	}
 }
 
-// KeyMapApplier is the typpe of a function which applies the
+// KeyMapApplier is the type of a function which applies the
 // changeKeyMap callback on a KeyMap struct inside the model, then
 // returns the resulting model.
 //
@@ -57,7 +57,7 @@ type KeyMapApplier func(m tea.Model, changeKeyMap func(interface{}) error) (tea.
 
 // SimpleKeyMapApplier is a helper to simplify the definition of the
 // function argument to KeyMapUpdater, in the case the model is
-// implemented by reference -- i.e. the address of the KayMap does not
+// implemented by reference -- i.e. the address of the KeyMap does not
 // change from one call to Update to the next.
 func SimpleKeyMapApplier(keymap interface{}) KeyMapApplier {
 	return func(m tea.Model, changeKeyMap func(interface{}) error) (tea.Model, error) {
@@ -122,7 +122,7 @@ func applyKeyRebind(km interface{}, bindingName string, newKeys ...string) error
 		}
 	}
 	kb.SetKeys(newKeys...)
-	return err
+	return nil
 }
 
 func applyKeyNewHelp(km interface{}, bindingName, helpKey, helpText string) error {

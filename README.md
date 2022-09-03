@@ -258,6 +258,62 @@ The following parameters are currently recognized:
   This is set by default to 20ms, which is sufficient to
   ignore the commands of a blinking cursor.
 
+## Advanced topic: testing style changes
+
+Many [bubbles](https://github.com/charmbracelet/bubbles) have a
+`Styles` struct with configurable styles (using [lipgloss](https://github.com/charmbracelet/lipgloss)).  It's useful to verify
+that the bubbles react properly when the styles are reconfigured at
+run-time.
+
+For this, you can tell catwalk about your styles
+this will activate the following special `run` input commands:
+
+```
+restyle <stylefield> <newstyle...>`
+```
+
+
+For example: `restyle mymodel.ValueStyle foreground: #f00` changes the
+`ValueStyle` style to use the color red, as if `.ValueStyle.Foreground(lipgloss.Color("#f00"))` was called.
+
+To activate, use the option `catwalk.WithUpdater(catwalk.StylesUpdater(...))`. For example:
+
+``` go
+func TestStyles(t *testing.T) {
+  m := New(...)
+  catwalk.RunModel(t, "testdata/styles", m, catwalk.WithUpdater(
+    // The string "hello" is the prefix for identifying the styles container in tests.
+    // Useful when there are multiple nested models.
+    catwalk.StylesUpdater("hello",
+      func(m tea.Model, fn func(interface{}) error) (tea.Model, error) {
+        tm := m.(myModel)
+        err := fn(&tm)
+        return tm, err
+    }),
+  ))
+}
+```
+
+After this, the input command `restyle hello.X ...` will automatically
+affect the style `.X` in your model.
+
+Alternatively, if your model implements `tea.Model` by reference
+(i.e. the address of its styles does not change between `Update`
+calls), you can simplify as follows:
+
+``` go
+func TestStyles(t *testing.T) {
+  m := New(...)
+  catwalk.RunModel(t, "testdata/bindings", &m, catwalk.WithUpdater(
+    // The string "hello" is the prefix for identifying the styles container in tests.
+    // Useful when there are multiple nested models.
+    KeyMapUpdater("hello", catwalk.SimpleStylesApplier(&m))))
+}
+```
+
+See the test `TestStyles` in `stylles_test.go` and the input file
+`testdata/styles` for an example.
+
 ## Advanced topic: testing key bindings
 
 Many [bubbles](https://github.com/charmbracelet/bubbles) have a
@@ -286,7 +342,7 @@ To declare a `KeyMap` in a test, use the option `catwalk.WithUpdater(catwalk.Key
 ``` go
 func TestBindings(t *testing.T) {
   m := New(...)
-  catwalk.RunModel(t, "testdata/bindings", helpModel{}, catwalk.WithUpdater(
+  catwalk.RunModel(t, "testdata/bindings", m, catwalk.WithUpdater(
     // The string "hello" is the prefix for identifying the keymap in tests.
 	// Useful when the model contains multiple keymaps.
     catwalk.KeyMapUpdater("hello",
@@ -307,7 +363,7 @@ Alternatively, if your model implements `tea.Model` by reference (i.e. the addre
 ``` go
 func TestBindings(t *testing.T) {
   m := New(...)
-  catwalk.RunModel(t, "testdata/bindings", helpModel{}, catwalk.WithUpdater(
+  catwalk.RunModel(t, "testdata/bindings", &m, catwalk.WithUpdater(
     // The string "hello" is the prefix for identifying the keymap in tests.
 	// Useful when the model contains multiple keymaps.
     KeyMapUpdater("hello", catwalk.SimpleKeyMapApplier(&m.KeyMap))))
