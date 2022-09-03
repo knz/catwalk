@@ -45,7 +45,7 @@ func (emptyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return emptyModel{}, func() tea.Msg { return nil }
 		case "w":
 			return emptyModel{}, func() tea.Msg {
-				time.Sleep(70 * time.Millisecond)
+				time.Sleep(100 * time.Millisecond)
 				return tea.Println("DELAYED HELLO")()
 			}
 		}

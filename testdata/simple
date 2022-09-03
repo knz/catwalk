@@ -202,9 +202,9 @@ MODEL VIEW🛇
 MODEL VIEW🛇
 
 
-set cmd_timeout=200ms
+set cmd_timeout=500ms
 ----
-cmd_timeout: 200ms
+cmd_timeout: 500ms
 
 run
 type w
