@@ -468,7 +468,7 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 			t.Logf("%s: applying command %q via model updater", d.pos, cmd)
 			supported, newModel, teaCmd, err := d.upd(d.m, cmd, args...)
 			if err != nil {
-				t.Fatalf("%s: updater error: %v", err)
+				t.Fatalf("%s: updater error: %v", d.pos, err)
 			}
 			if !supported {
 				t.Fatalf("%s: unknown command %q", d.pos, cmd)
