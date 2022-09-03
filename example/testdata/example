@@ -2,36 +2,45 @@ run
 ----
 TEA WINDOW SIZE: {40 3}
 -- view:
-first line ␤
-second line␤
-third line 🛇
+[31mfirst line[0m ␤
+[31msecond line[0m␤
+[31mthird line[0m 🛇
 
 # One line down
 run
 type j
 ----
 -- view:
-second line␤
-third line ␤
-fourth line🛇
+[31msecond line[0m␤
+[31mthird line[0m ␤
+[31mfourth line[0m🛇
 
 # Two lines down
 run
 type jj
 ----
 -- view:
-fourth line␤
-fifth line ␤
-sixth line 🛇
+[31mfourth line[0m␤
+[31mfifth line[0m ␤
+[31msixth line[0m 🛇
+
+# Change the color to blue.
+run
+restyle view.Style foreground: 12
+----
+-- view:
+[94mfourth line[0m␤
+[94mfifth line[0m ␤
+[94msixth line[0m 🛇
 
 # One line up
 run
 key up
 ----
 -- view:
-third line ␤
-fourth line␤
-fifth line 🛇
+[94mthird line[0m ␤
+[94mfourth line[0m␤
+[94mfifth line[0m 🛇
 
 # Check the exit key works.
 run
@@ -39,6 +48,6 @@ type q
 ----
 TEA QUIT
 -- view:
-third line ␤
-fourth line␤
-fifth line 🛇
+[94mthird line[0m ␤
+[94mfourth line[0m␤
+[94mfifth line[0m 🛇
