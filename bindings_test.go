@@ -116,20 +116,27 @@ func TestChangeKeyBinding(t *testing.T) {
 // TestRebind checks the key rebind commands/
 func TestRebind(t *testing.T) {
 	t.Run("by-value", func(t *testing.T) {
-		RunModel(t, "testdata/bindings", helpModel{}, WithUpdater(
-			KeyMapUpdater("hello", func(m tea.Model, fn func(interface{}) error) (tea.Model, error) {
-				h := m.(helpModel)
-				err := fn(&h.KeyMap)
-				return h, err
-			}),
-		))
+		upd1 := KeyMapUpdater("hello", func(m tea.Model, fn func(interface{}) error) (tea.Model, error) {
+			h := m.(helpModel)
+			err := fn(&h.KeyMap)
+			return h, err
+		})
+
+		upd2 := KeyMapUpdater("world", func(m tea.Model, fn func(interface{}) error) (tea.Model, error) {
+			h := m.(helpModel)
+			err := fn(&h.OtherKeyMap)
+			return h, err
+		})
+
+		RunModel(t, "testdata/bindings", helpModel{}, WithUpdater(upd1), WithUpdater(upd2))
 	})
 
 	t.Run("by-reference", func(t *testing.T) {
 		hm := &helpModelR{}
-		RunModel(t, "testdata/bindings", hm, WithUpdater(
-			KeyMapUpdater("hello", SimpleKeyMapApplier(&hm.KeyMap)),
-		))
+		upd1 := KeyMapUpdater("hello", SimpleKeyMapApplier(&hm.KeyMap))
+		upd2 := KeyMapUpdater("world", SimpleKeyMapApplier(&hm.OtherKeyMap))
+
+		RunModel(t, "testdata/bindings", hm, WithUpdater(upd1), WithUpdater(upd2))
 	})
 }
 
@@ -138,6 +145,9 @@ type helpModel struct {
 	help   help.Model
 	KeyMap struct {
 		MyKey key.Binding
+	}
+	OtherKeyMap struct {
+		Other key.Binding
 	}
 }
 
@@ -149,6 +159,8 @@ func (h helpModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(kmsg, h.KeyMap.MyKey):
 			return h, tea.Println("MYKEY RECOGNIZED")
+		case key.Matches(kmsg, h.OtherKeyMap.Other):
+			return h, tea.Println("OTHERKEY RECOGNIZED")
 		default:
 			return h, tea.Println("UNKOWN KEY")
 		}
@@ -161,11 +173,11 @@ func (h helpModel) View() string {
 }
 
 func (h helpModel) ShortHelp() []key.Binding {
-	return []key.Binding{h.KeyMap.MyKey}
+	return []key.Binding{h.KeyMap.MyKey, h.OtherKeyMap.Other}
 }
 
 func (h helpModel) FullHelp() [][]key.Binding {
-	return [][]key.Binding{{h.KeyMap.MyKey}}
+	return [][]key.Binding{{h.KeyMap.MyKey}, {h.OtherKeyMap.Other}}
 }
 
 type helpModelR helpModel

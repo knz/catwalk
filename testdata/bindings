@@ -5,7 +5,7 @@ type c
 TEA PRINT: {UNKOWN KEY}
 -- view:
 VALUE: 1␤
- 🛇
+  🛇
 
 # Let's bind MyKey to "c".
 # After that, typing "c" will be recognized.
@@ -16,7 +16,7 @@ type c
 TEA PRINT: {MYKEY RECOGNIZED}
 -- view:
 VALUE: 2␤
- 🛇
+  🛇
 
 # Let's change the help text and check
 # the help widget updates accordingly.
@@ -25,7 +25,7 @@ keyhelp hello.MyKey c says hi
 ----
 -- view:
 VALUE: 2␤
-c says hi🛇
+c says hi 🛇
 
 # Let's disable the binding.
 # The help text becomes hidden.
@@ -36,6 +36,7 @@ type c
 TEA PRINT: {UNKOWN KEY}
 -- view:
 VALUE: 3␤
+ 🛇
 
 # Let's re-enable the binding.
 # This shows the help text again.
@@ -46,14 +47,27 @@ type c
 TEA PRINT: {MYKEY RECOGNIZED}
 -- view:
 VALUE: 4␤
-c says hi🛇
+c says hi 🛇
+
+# We can also operate on multiple sets of keybindings.
+run
+keybind hello.MyKey d
+keybind world.Other c
+type c
+type d
+----
+TEA PRINT: {OTHERKEY RECOGNIZED}
+TEA PRINT: {MYKEY RECOGNIZED}
+-- view:
+VALUE: 6␤
+c says hi 🛇
 
 # Show what happens when we unbind entirely.
 run
 keybind hello.MyKey unbind
-type c
+type d
 ----
 TEA PRINT: {UNKOWN KEY}
 -- view:
-VALUE: 5␤
- 🛇
+VALUE: 7␤
+  🛇
