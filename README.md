@@ -258,6 +258,65 @@ The following parameters are currently recognized:
   This is set by default to 20ms, which is sufficient to
   ignore the commands of a blinking cursor.
 
+## Advanced topic: testing key bindings
+
+Many [bubbles](https://github.com/charmbracelet/bubbles) have a
+`KeyMap` struct with configurable key bindings.  It's useful to verify
+that the bubbles react properly when the keymaps are reconfigured at
+run-time.
+
+For this, you can tell catwalk about your `KeyMap` struct and
+this will activate the following special `run` input commands:
+
+- `keybind <keymapfield> <newbinding>`
+
+  For example: `keybind mykeys.CursorUp up j` rebinds the `CursorUp`
+  binding in the KeyMap `mykeys` as if
+  `key.NewBinding(key.WithKeys("up", "j"))` was called.
+
+- `keyhelp <keymapfield> <helpkey> <helptext>`
+
+  For example: `keybind mykeys.CursorUp up move the cursor up` rebinds
+  the `CursorUp` binding in the KeyMap `mykeys` as if
+  `key.NewBinding(key.WithHelp("up", "move the cursor up"))` was
+  called.
+
+To declare a `KeyMap` in a test, use the option `catwalk.WithUpdater(catwalk.KeyMapUpdater(...))`. For example:
+
+``` go
+func TestBindings(t *testing.T) {
+  m := New(...)
+  catwalk.RunModel(t, "testdata/bindings", helpModel{}, catwalk.WithUpdater(
+    // The string "hello" is the prefix for identifying the keymap in tests.
+	// Useful when the model contains multiple keymaps.
+    catwalk.KeyMapUpdater("hello",
+      func(m tea.Model, fn func(interface{}) error) (tea.Model, error) {
+        tm := m.(YourModel)
+        err := fn(&tm.KeyMap)
+        return tm, err
+    }),
+  ))
+}
+```
+
+After this, the input command `keybind hello.X ...` will automatically
+affect the binding `.KeyMap.X` in your model.
+
+Alternatively, if your model implements `tea.Model` by reference (i.e. the address of its KeyMap does not change between `Update` calls), you can simplify as follows:
+
+``` go
+func TestBindings(t *testing.T) {
+  m := New(...)
+  catwalk.RunModel(t, "testdata/bindings", helpModel{}, catwalk.WithUpdater(
+    // The string "hello" is the prefix for identifying the keymap in tests.
+	// Useful when the model contains multiple keymaps.
+    KeyMapUpdater("hello", catwalk.SimpleKeyMapApplier(&m.KeyMap))))
+}
+```
+
+See the test `TestRebind` in `bindings_test.go` and the input file
+`testdata/bindings` for an example.
+
 ## Your turn!
 
 You can start using `catwalk` in your Bubbletea / Charm projects right
