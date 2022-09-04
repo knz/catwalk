@@ -1,5 +1,6 @@
 # catwalk
 
+[![Latest Release](https://img.shields.io/github/release/knz/catwalk.svg)](https://github.com/knz/catwalk/releases)
 [![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](https://pkg.go.dev/github.com/knz/catwalk)
 [![Build Status](https://github.com/knz/catwalk/workflows/build/badge.svg)](https://github.com/knz/catwalk/actions)
 [![Go ReportCard](https://goreportcard.com/badge/knz/catwalk)](https://goreportcard.com/report/knz/catwalk)
