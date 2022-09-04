@@ -420,8 +420,6 @@ func (d *driver) getInt(t TB, v string) int {
 }
 
 func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
-	alt := false
-
 	switch cmd {
 	case "resize":
 		d.assertArgc(t, args, 2)
@@ -433,6 +431,7 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 	case "key":
 		d.assertArgc(t, args, 1)
 		keyName := args[0]
+		alt := false
 		if strings.HasPrefix(keyName, "alt+") {
 			alt = true
 			keyName = strings.TrimPrefix(keyName, "alt+")
@@ -449,19 +448,14 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 		}
 		// Not a special key: it's runes.
 		args[0] = keyName
-		fallthrough
+		d.typeIn(args, alt)
 
 	case "type":
-		var buf strings.Builder
-		for i, arg := range args {
-			if i > 0 {
-				buf.WriteByte(' ')
-			}
-			buf.WriteString(arg)
-		}
-		for _, r := range buf.String() {
-			d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune{r}, Alt: alt}))
-		}
+		d.typeIn(args, false)
+
+	case "enter":
+		d.typeIn(args, false)
+		d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyEnter}))
 
 	default:
 		if d.upd != nil {
@@ -481,6 +475,19 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 	}
 
 	return nil
+}
+
+func (d *driver) typeIn(args []string, alt bool) {
+	var buf strings.Builder
+	for i, arg := range args {
+		if i > 0 {
+			buf.WriteByte(' ')
+		}
+		buf.WriteString(arg)
+	}
+	for _, r := range buf.String() {
+		d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune{r}, Alt: alt}))
+	}
 }
 
 var allKeys = func() map[string]tea.Key {

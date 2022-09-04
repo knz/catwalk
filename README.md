@@ -209,6 +209,9 @@ Under `run`, the following input commands are supported:
 
   For example: `type abc` produces 3 key presses for a, b, c.
 
+- `enter <text>`: like `type`, but also add a key press for the
+  `enter` key at the end.
+
 - `key <keyname>`: produce one `tea.KeyMsg` for the given key.
 
   For example: `key ctrl+c`
