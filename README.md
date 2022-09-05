@@ -6,7 +6,7 @@
 [![Go ReportCard](https://goreportcard.com/badge/knz/catwalk)](https://goreportcard.com/report/knz/catwalk)
 [![Coverage Status](https://coveralls.io/repos/github/knz/catwalk/badge.svg)](https://coveralls.io/github/knz/catwalk)
 
-**catwalk** is a unit test library for Bubbletea TUI models.
+**catwalk** is a unit test library for [Bubbletea](https://github.com/charmbracelet/bubbletea) TUI models (a.k.a. “bubbles”).
 
 It enables implementers to verify the state of models and their `View`
 as they process `tea.Msg` objects through their `Update` method.
@@ -26,7 +26,7 @@ themselves" on the runway of the test input files.
 
 ## Example
 
-Let's test the `viewport` Bubble!
+Let's test the `viewport` [Bubble](https://github.com/charmbracelet/bubbles)!
 
 First, we define a top-level model around `viewport`:
 
