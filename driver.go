@@ -164,6 +164,10 @@ func (d *driver) processTeaMsgs(trace bool) {
 			fmt.Fprintf(&d.result, "TEA PRINT: %v\n", msg)
 		case szType:
 			fmt.Fprintf(&d.result, "TEA WINDOW SIZE: %v\n", msg)
+			// Window size is also visible to the model.
+			newM, newCmd := d.m.Update(msg)
+			d.m = newM
+			d.addCmds(newCmd)
 		case quitType:
 			fmt.Fprintf(&d.result, "TEA QUIT\n")
 		case execType:
