@@ -514,5 +514,7 @@ var allKeys = func() map[string]tea.Key {
 		}
 		result[keyName] = k
 	}
+	result["space"] = tea.Key{Type: tea.KeySpace, Runes: []rune(" ")}
+	result["backspace"] = tea.Key{Type: tea.KeyBackspace}
 	return result
 }()
