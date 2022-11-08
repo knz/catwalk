@@ -114,17 +114,39 @@ TEA PRINT: {MODEL UPDATE}
 MODEL VIEW🛇
 
 run trace=on
+key space
+key backspace
 key ctrl+c
 key alt+c
 key alt+ctrl+down
 ----
+-- trace: before "key space"
+-- trace: after "key"
+-- view:
+MODEL VIEW🛇
+-- trace: before "key backspace"
+-- trace: processing 1 messages
+-- trace: msg tea.KeyMsg{Type:-12, Runes:[]int32{32}, Alt:false}
+-- trace: processing 1 cmds
+-- trace: translated cmd: tea.printLineMessage
+-- trace: after "key"
+-- view:
+MODEL VIEW🛇
 -- trace: before "key ctrl+c"
+-- trace: processing 2 messages
+-- trace: msg tea.KeyMsg{Type:127, Runes:[]int32(nil), Alt:false}
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
+TEA PRINT: {MODEL UPDATE}
+-- trace: processing 1 cmds
+-- trace: translated cmd: tea.printLineMessage
 -- trace: after "key"
 -- view:
 MODEL VIEW🛇
 -- trace: before "key alt+c"
--- trace: processing 1 messages
+-- trace: processing 2 messages
 -- trace: msg tea.KeyMsg{Type:3, Runes:[]int32(nil), Alt:false}
+-- trace: msg tea.printLineMessage{messageBody:"MODEL UPDATE"}
+TEA PRINT: {MODEL UPDATE}
 -- trace: processing 1 cmds
 -- trace: translated cmd: tea.printLineMessage
 -- trace: after "key"
