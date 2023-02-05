@@ -461,6 +461,14 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 		d.typeIn(args, false)
 		d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyEnter}))
 
+	case "paste":
+		d.assertArgc(t, args, 1)
+		s, err := strconv.Unquote(args[0])
+		if err != nil {
+			t.Fatalf("%s: paste argment error: %v", d.pos, err)
+		}
+		d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune(s)}))
+
 	default:
 		if d.upd != nil {
 			t.Logf("%s: applying command %q via model updater", d.pos, cmd)

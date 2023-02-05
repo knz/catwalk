@@ -217,6 +217,11 @@ Under `run`, the following input commands are supported:
 
   For example: `key ctrl+c`
 
+- `paste "<text>"`: paste the text as a single key event.
+  The text can contain Go escape sequences.
+
+  For example: `paste "hello\nworld"`
+
 - `resize <W> <H>`: produce a `tea.WindowSizeMsg` with the specified size.
 
 You can also add support for your own input commands by passing an
