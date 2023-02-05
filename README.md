@@ -391,4 +391,4 @@ If you have any questions or comments:
 
 - for bug fixes, feature requests, etc., [file an issue]()
 - for questions, suggestions, etc. you can come chat on the [Charm
-  Slack](https://charm.sh/slack/).
+  Discord](https://charm.sh/chat/).
