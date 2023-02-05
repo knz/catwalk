@@ -217,6 +217,11 @@ Under `run`, the following input commands are supported:
 
   For example: `key ctrl+c`
 
+- `paste "<text>"`: paste the text as a single key event.
+  The text can contain Go escape sequences.
+
+  For example: `paste "hello\nworld"`
+
 - `resize <W> <H>`: produce a `tea.WindowSizeMsg` with the specified size.
 
 You can also add support for your own input commands by passing an
@@ -386,4 +391,4 @@ If you have any questions or comments:
 
 - for bug fixes, feature requests, etc., [file an issue]()
 - for questions, suggestions, etc. you can come chat on the [Charm
-  Slack](https://charm.sh/slack/).
+  Discord](https://charm.sh/chat/).
