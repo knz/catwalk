@@ -462,8 +462,8 @@ func (d *driver) ApplyTextCommand(t TB, cmd string, args ...string) tea.Cmd {
 		d.addMsg(tea.KeyMsg(tea.Key{Type: tea.KeyEnter}))
 
 	case "paste":
-		d.assertArgc(t, args, 1)
-		s, err := strconv.Unquote(args[0])
+		arg := strings.Join(args, " ")
+		s, err := strconv.Unquote(arg)
 		if err != nil {
 			t.Fatalf("%s: paste argment error: %v", d.pos, err)
 		}

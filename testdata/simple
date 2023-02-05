@@ -74,9 +74,9 @@ TEA PRINT: {MODEL UPDATE}
 MODEL VIEW🛇
 
 run trace=on
-paste "ab\ncd"
+paste "a b\nc d"
 ----
--- trace: before "paste \"ab\\ncd\""
+-- trace: before "paste \"a b\\nc d\""
 -- trace: after "paste"
 -- view:
 MODEL VIEW🛇
@@ -84,7 +84,7 @@ MODEL VIEW🛇
 -- view:
 MODEL VIEW🛇
 -- trace: processing 1 messages
--- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{97, 98, 10, 99, 100}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-1, Runes:[]int32{97, 32, 98, 10, 99, 32, 100}, Alt:false}
 -- trace: processing 1 cmds
 -- trace: translated cmd: tea.printLineMessage
 -- trace: processing 1 messages
