@@ -2,7 +2,10 @@ run
 ----
 -- view:
 VALUE: 0␤
-␤
+        ␤
+        ␤
+        ␤
+        🛇
 
 run
 restyle view.Style border: normal
