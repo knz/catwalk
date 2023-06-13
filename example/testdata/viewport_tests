@@ -1,9 +1,9 @@
 run
 ----
 -- view:
-first line␤
+first line ␤
 second line␤
-third line🛇
+third line 🛇
 
 # One line down
 run
@@ -11,7 +11,7 @@ type j
 ----
 -- view:
 second line␤
-third line␤
+third line ␤
 fourth line🛇
 
 # Two lines down
@@ -20,14 +20,14 @@ type jj
 ----
 -- view:
 fourth line␤
-fifth line␤
-sixth line🛇
+fifth line ␤
+sixth line 🛇
 
 # One line up
 run
 key up
 ----
 -- view:
-third line␤
+third line ␤
 fourth line␤
-fifth line🛇
+fifth line 🛇

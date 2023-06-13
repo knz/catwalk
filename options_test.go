@@ -67,7 +67,7 @@ othercmd
 ----
 -- view:
 VALUE: 123␤
-C-c break 🛇`
+C-c break🛇`
 
 	RunModelFromString(t, test, hm, WithUpdater(upd1), WithUpdater(upd2), WithUpdater(upd3))
 }
