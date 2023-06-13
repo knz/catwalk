@@ -116,7 +116,7 @@ type viewModel struct {
 
 func newView() viewModel {
 	return viewModel{
-		viewport: viewport.New(10, 3),
+		viewport: viewport.New(12, 5),
 	}
 }
 

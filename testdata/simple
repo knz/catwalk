@@ -147,7 +147,7 @@ key alt+ctrl+down
 MODEL VIEW🛇
 -- trace: before "key backspace"
 -- trace: processing 1 messages
--- trace: msg tea.KeyMsg{Type:-12, Runes:[]int32{32}, Alt:false}
+-- trace: msg tea.KeyMsg{Type:-15, Runes:[]int32{32}, Alt:false}
 -- trace: processing 1 cmds
 -- trace: translated cmd: tea.printLineMessage
 -- trace: after "key"
@@ -187,7 +187,7 @@ MODEL VIEW🛇
 -- view:
 MODEL VIEW🛇
 -- trace: processing 2 messages
--- trace: msg tea.KeyMsg{Type:-14, Runes:[]int32(nil), Alt:true}
+-- trace: msg tea.KeyMsg{Type:-17, Runes:[]int32(nil), Alt:true}
 -- trace: msg tea.enableMouseCellMotionMsg{}
 TEA ENABLE MOUSE CELL MOTION
 -- trace: processing 1 cmds
